@@ -2,13 +2,13 @@ import { Search, Filter, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { turmaList } from "@/data/mockData";
 
 interface FilterBarProps {
   turmaFilter: string;
   statusResposta: string;
   statusCRT: string;
   search: string;
+  turmaList: string[];
   onTurmaChange: (v: string) => void;
   onStatusRespostaChange: (v: string) => void;
   onStatusCRTChange: (v: string) => void;
@@ -17,7 +17,7 @@ interface FilterBarProps {
 }
 
 const FilterBar = ({
-  turmaFilter, statusResposta, statusCRT, search,
+  turmaFilter, statusResposta, statusCRT, search, turmaList,
   onTurmaChange, onStatusRespostaChange, onStatusCRTChange, onSearchChange, onClear,
 }: FilterBarProps) => {
   const hasFilters = turmaFilter !== "all" || statusResposta !== "all" || statusCRT !== "all" || search !== "";
@@ -25,13 +25,13 @@ const FilterBar = ({
   return (
     <div className="filter-bar">
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-primary">
           <Filter className="w-4 h-4" />
-          <span className="text-sm font-medium">Filtros</span>
+          <span className="text-sm font-semibold">Filtros</span>
         </div>
 
         <Select value={turmaFilter} onValueChange={onTurmaChange}>
-          <SelectTrigger className="w-[200px] h-9 text-sm">
+          <SelectTrigger className="w-[220px] h-9 text-sm bg-muted/50 border-border">
             <SelectValue placeholder="Turma" />
           </SelectTrigger>
           <SelectContent>
@@ -43,7 +43,7 @@ const FilterBar = ({
         </Select>
 
         <Select value={statusResposta} onValueChange={onStatusRespostaChange}>
-          <SelectTrigger className="w-[180px] h-9 text-sm">
+          <SelectTrigger className="w-[180px] h-9 text-sm bg-muted/50 border-border">
             <SelectValue placeholder="Status Resposta" />
           </SelectTrigger>
           <SelectContent>
@@ -54,7 +54,7 @@ const FilterBar = ({
         </Select>
 
         <Select value={statusCRT} onValueChange={onStatusCRTChange}>
-          <SelectTrigger className="w-[160px] h-9 text-sm">
+          <SelectTrigger className="w-[160px] h-9 text-sm bg-muted/50 border-border">
             <SelectValue placeholder="Status CRT" />
           </SelectTrigger>
           <SelectContent>
@@ -70,7 +70,7 @@ const FilterBar = ({
             placeholder="Buscar por nome ou email..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 h-9 text-sm"
+            className="pl-9 h-9 text-sm bg-muted/50 border-border"
           />
         </div>
 

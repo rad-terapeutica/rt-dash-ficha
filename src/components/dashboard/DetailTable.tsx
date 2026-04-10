@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type Person } from "@/data/mockData";
+import { type Person } from "@/data/dataProcessor";
 import { ChevronUp, ChevronDown, Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -7,13 +7,13 @@ interface DetailTableProps {
   people: Person[];
 }
 
-type SortKey = "name" | "email" | "turma" | "respondeuPesquisa" | "virouCRT";
+type SortKey = "nome" | "email" | "turma" | "respondeuPesquisa" | "virouCRT";
 
 const DetailTable = ({ people }: DetailTableProps) => {
   const [sortKey, setSortKey] = useState<SortKey>("turma");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(0);
-  const perPage = 15;
+  const perPage = 20;
 
   const sorted = [...people].sort((a, b) => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -26,7 +26,7 @@ const DetailTable = ({ people }: DetailTableProps) => {
   const totalPages = Math.ceil(sorted.length / perPage);
 
   const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
   };
 
@@ -46,7 +46,7 @@ const DetailTable = ({ people }: DetailTableProps) => {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="section-title">Tabela Detalhada</h3>
-          <p className="section-subtitle">{sorted.length} registros encontrados</p>
+          <p className="section-subtitle">{sorted.length.toLocaleString("pt-BR")} registros encontrados</p>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ const DetailTable = ({ people }: DetailTableProps) => {
           <thead>
             <tr className="border-b border-border">
               {([
-                ["name", "Nome"],
+                ["nome", "Nome"],
                 ["email", "Email"],
                 ["turma", "Turma"],
                 ["respondeuPesquisa", "Pesquisa"],
@@ -73,27 +73,28 @@ const DetailTable = ({ people }: DetailTableProps) => {
                 </th>
               ))}
               <th className="text-left py-3 px-3 text-muted-foreground font-medium">Status</th>
-              <th className="text-left py-3 px-3 text-muted-foreground font-medium">Motivo</th>
+              <th className="text-left py-3 px-3 text-muted-foreground font-medium">Tag CRT</th>
+              <th className="text-left py-3 px-3 text-muted-foreground font-medium">Disposto a investir?</th>
             </tr>
           </thead>
           <tbody>
-            {paginated.map((p) => (
-              <tr key={p.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                <td className="py-2.5 px-3 font-medium">{p.name}</td>
-                <td className="py-2.5 px-3 text-muted-foreground font-mono text-xs">{p.email}</td>
+            {paginated.map(p => (
+              <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                <td className="py-2.5 px-3 font-medium max-w-[180px] truncate">{p.nome}</td>
+                <td className="py-2.5 px-3 text-muted-foreground font-mono text-xs max-w-[200px] truncate">{p.email}</td>
                 <td className="py-2.5 px-3 text-xs">{p.turma.replace("Desafio - ", "")}</td>
                 <td className="py-2.5 px-3">
                   {p.respondeuPesquisa ? (
                     <Check className="w-4 h-4 text-success" />
                   ) : (
-                    <X className="w-4 h-4 text-muted-foreground/40" />
+                    <X className="w-4 h-4 text-muted-foreground/30" />
                   )}
                 </td>
                 <td className="py-2.5 px-3">
                   {p.virouCRT ? (
                     <Check className="w-4 h-4 text-warning" />
                   ) : (
-                    <X className="w-4 h-4 text-muted-foreground/40" />
+                    <X className="w-4 h-4 text-muted-foreground/30" />
                   )}
                 </td>
                 <td className="py-2.5 px-3">
@@ -101,8 +102,11 @@ const DetailTable = ({ people }: DetailTableProps) => {
                     {getStatus(p)}
                   </Badge>
                 </td>
-                <td className="py-2.5 px-3 text-xs text-muted-foreground truncate max-w-[150px]">
-                  {p.respostas?.motivoPrincipal || "—"}
+                <td className="py-2.5 px-3 text-xs text-muted-foreground truncate max-w-[180px]">
+                  {p.crtTag || "—"}
+                </td>
+                <td className="py-2.5 px-3 text-xs text-muted-foreground truncate max-w-[120px]">
+                  {p.survey?.dispostoinvestir || "—"}
                 </td>
               </tr>
             ))}
@@ -114,16 +118,16 @@ const DetailTable = ({ people }: DetailTableProps) => {
         <span>Página {page + 1} de {totalPages}</span>
         <div className="flex gap-2">
           <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="px-3 py-1 rounded-md border border-border hover:bg-muted disabled:opacity-40 transition-colors"
+            className="px-3 py-1.5 rounded-md border border-border bg-muted/30 hover:bg-muted disabled:opacity-40 transition-colors"
           >
             Anterior
           </button>
           <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="px-3 py-1 rounded-md border border-border hover:bg-muted disabled:opacity-40 transition-colors"
+            className="px-3 py-1.5 rounded-md border border-border bg-muted/30 hover:bg-muted disabled:opacity-40 transition-colors"
           >
             Próxima
           </button>

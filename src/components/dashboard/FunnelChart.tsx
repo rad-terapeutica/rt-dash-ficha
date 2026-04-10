@@ -20,13 +20,13 @@ const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
   ];
 
   return (
-    <div className="dashboard-card">
+    <div className="dashboard-card h-full">
       <h3 className="section-title mb-1">Funil da Jornada</h3>
       <p className="section-subtitle mb-6">Turma → Pesquisa → CRT</p>
 
       <div className="flex flex-col items-center gap-2">
         {stages.map((stage, i) => {
-          const widthPct = Math.max(30, stage.pct);
+          const widthPct = Math.max(35, stage.pct);
           const Icon = stage.icon;
 
           return (
@@ -34,12 +34,13 @@ const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
               <motion.div
                 initial={{ opacity: 0, scaleX: 0.5 }}
                 animate={{ opacity: 1, scaleX: 1 }}
-                transition={{ delay: i * 0.15, duration: 0.4 }}
-                className="rounded-xl py-4 px-6 flex items-center justify-between transition-all"
+                transition={{ delay: i * 0.15, duration: 0.5, ease: "easeOut" }}
+                className="rounded-xl py-4 px-6 flex items-center justify-between"
                 style={{
                   width: `${widthPct}%`,
-                  backgroundColor: `${stage.color}`,
+                  backgroundColor: stage.color,
                   minWidth: "280px",
+                  boxShadow: `0 4px 20px ${stage.color}30`,
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -55,7 +56,7 @@ const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
               {i < drops.length && (
                 <div className="flex items-center gap-2 py-1 text-muted-foreground">
                   <ArrowDown className="w-4 h-4" />
-                  <span className="text-xs font-medium">
+                  <span className="text-xs font-medium font-mono">
                     {drops[i].from > 0 ? `-${(((drops[i].from - drops[i].to) / drops[i].from) * 100).toFixed(1)}%` : "—"}
                   </span>
                 </div>

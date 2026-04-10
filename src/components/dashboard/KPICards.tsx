@@ -8,15 +8,16 @@ interface KPICardsProps {
   pctRespondentes: number;
   pctCrtRespondentes: number;
   pctCrtTotal: number;
+  compraAprovada: number;
 }
 
 const kpis: Array<{ key: keyof KPICardsProps; label: string; icon: typeof Users; color: string; suffix?: string }> = [
-  { key: "total", label: "Total da Turma", icon: Users, color: "hsl(var(--chart-1))" },
-  { key: "respondentes", label: "Respondentes", icon: FileCheck, color: "hsl(var(--chart-2))" },
-  { key: "pctRespondentes", label: "% Respondentes", icon: TrendingUp, color: "hsl(var(--chart-3))", suffix: "%" },
+  { key: "total", label: "Total da Turma", icon: Users, color: "hsl(var(--chart-2))" },
+  { key: "respondentes", label: "Respondentes", icon: FileCheck, color: "hsl(var(--chart-3))" },
+  { key: "pctRespondentes", label: "% Respondentes", icon: TrendingUp, color: "hsl(var(--primary))", suffix: "%" },
   { key: "crt", label: "Total CRT", icon: Award, color: "hsl(var(--chart-4))" },
-  { key: "pctCrtRespondentes", label: "% CRT / Respondentes", icon: Target, color: "hsl(var(--success))", suffix: "%" },
-  { key: "pctCrtTotal", label: "% CRT / Total", icon: BarChart3, color: "hsl(var(--primary))", suffix: "%" },
+  { key: "pctCrtRespondentes", label: "% CRT / Respond.", icon: Target, color: "hsl(var(--success))", suffix: "%" },
+  { key: "pctCrtTotal", label: "% CRT / Total", icon: BarChart3, color: "hsl(var(--info))", suffix: "%" },
 ];
 
 const KPICards = (props: KPICardsProps) => {
@@ -24,20 +25,19 @@ const KPICards = (props: KPICardsProps) => {
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {kpis.map((kpi, i) => {
         const Icon = kpi.icon;
-        const value = props[kpi.key as keyof KPICardsProps];
-        const formatted = kpi.suffix ? `${value.toFixed(1)}%` : value.toLocaleString("pt-BR");
+        const value = props[kpi.key];
+        const formatted = kpi.suffix ? `${Number(value).toFixed(1)}%` : Number(value).toLocaleString("pt-BR");
 
         return (
           <motion.div
             key={kpi.key}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.3 }}
+            transition={{ delay: i * 0.06, duration: 0.4, ease: "easeOut" }}
             className="kpi-card"
-            style={{ "--accent-line": kpi.color } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg" style={{ backgroundColor: `${kpi.color}15` }}>
+              <div className="p-2 rounded-lg" style={{ backgroundColor: `${kpi.color}20` }}>
                 <Icon className="w-4 h-4" style={{ color: kpi.color }} />
               </div>
             </div>
