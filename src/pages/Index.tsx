@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSheetData } from "@/hooks/useSheetData";
-import { getGlobalStats, getTurmaList, getTurmaStats } from "@/data/dataProcessor";
+import { getGlobalStats, getTurmaList } from "@/data/dataProcessor";
 import FilterBar from "@/components/dashboard/FilterBar";
 import KPICards from "@/components/dashboard/KPICards";
 import FunnelChart from "@/components/dashboard/FunnelChart";
@@ -12,7 +12,7 @@ import InsightsPanel from "@/components/dashboard/InsightsPanel";
 import { BarChart3, Loader2, AlertCircle } from "lucide-react";
 
 const Index = () => {
-  const { people, compraAprovadaCount, loading, error } = useSheetData();
+  const { people, loading, error } = useSheetData();
   const [turmaFilter, setTurmaFilter] = useState("all");
   const [statusResposta, setStatusResposta] = useState("all");
   const [statusCRT, setStatusCRT] = useState("all");
@@ -35,7 +35,7 @@ const Index = () => {
     });
   }, [people, turmaFilter, statusResposta, statusCRT, search]);
 
-  const stats = useMemo(() => getGlobalStats(filtered, compraAprovadaCount), [filtered, compraAprovadaCount]);
+  const stats = useMemo(() => getGlobalStats(filtered), [filtered]);
 
   const clearFilters = () => {
     setTurmaFilter("all");
@@ -85,7 +85,7 @@ const Index = () => {
                 Ficha de Interesse <span className="text-primary">×</span> Desafio <span className="text-primary">×</span> COMU RT
               </h1>
               <p className="text-xs text-muted-foreground">
-                Turma do Desafio → Respondeu Pesquisa → COMU RT
+                Turma do Desafio → Respondeu Pesquisa → CRT
               </p>
             </div>
           </div>
