@@ -10,14 +10,14 @@ interface KPICardsProps {
   pctCrtTotal: number;
 }
 
-const kpis = [
+const kpis: Array<{ key: keyof KPICardsProps; label: string; icon: typeof Users; color: string; suffix?: string }> = [
   { key: "total", label: "Total da Turma", icon: Users, color: "hsl(var(--chart-1))" },
   { key: "respondentes", label: "Respondentes", icon: FileCheck, color: "hsl(var(--chart-2))" },
   { key: "pctRespondentes", label: "% Respondentes", icon: TrendingUp, color: "hsl(var(--chart-3))", suffix: "%" },
   { key: "crt", label: "Total CRT", icon: Award, color: "hsl(var(--chart-4))" },
-  { key: "pctCrtRespondentes", label: "% CRT / Respondentes", icon: Target, color: "hsl(var(--success))" },
-  { key: "pctCrtTotal", label: "% CRT / Total", icon: BarChart3, color: "hsl(var(--primary))" },
-] as const;
+  { key: "pctCrtRespondentes", label: "% CRT / Respondentes", icon: Target, color: "hsl(var(--success))", suffix: "%" },
+  { key: "pctCrtTotal", label: "% CRT / Total", icon: BarChart3, color: "hsl(var(--primary))", suffix: "%" },
+];
 
 const KPICards = (props: KPICardsProps) => {
   return (
