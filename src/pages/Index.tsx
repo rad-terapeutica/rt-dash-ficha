@@ -9,14 +9,15 @@ import ResponseDistribution from "@/components/dashboard/ResponseDistribution";
 import RespondentesVsCRT from "@/components/dashboard/RespondentesVsCRT";
 import DetailTable from "@/components/dashboard/DetailTable";
 import InsightsPanel from "@/components/dashboard/InsightsPanel";
-import { BarChart3, Loader2, AlertCircle } from "lucide-react";
+import { BarChart3, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 
 const Index = () => {
-  const { people, loading, error } = useSheetData();
+  const { people, loading, error, refresh, lastUpdated } = useSheetData();
   const [turmaFilter, setTurmaFilter] = useState("all");
   const [statusResposta, setStatusResposta] = useState("all");
   const [statusCRT, setStatusCRT] = useState("all");
   const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const turmaList = useMemo(() => getTurmaList(people), [people]);
 
@@ -42,6 +43,12 @@ const Index = () => {
     setStatusResposta("all");
     setStatusCRT("all");
     setSearch("");
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setIsRefreshing(false);
   };
 
   if (loading) {
@@ -90,6 +97,20 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-muted border border-border rounded-lg transition-colors disabled:opacity-50"
+              title="Atualizar dados das planilhas"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>Atualizar</span>
+            </button>
+            {lastUpdated && (
+              <div className="text-xs text-muted-foreground hidden sm:block">
+                Atualizado: {lastUpdated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
             <div className="text-xs text-muted-foreground font-mono bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
               {filtered.length.toLocaleString("pt-BR")} registros
             </div>

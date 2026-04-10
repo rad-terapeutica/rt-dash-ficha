@@ -6,31 +6,43 @@ interface UseSheetDataResult {
   people: Person[];
   loading: boolean;
   error: string | null;
+  refresh: () => void;
+  lastUpdated: Date | null;
 }
 
 export function useSheetData(): UseSheetDataResult {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const loadData = async (cancelledRef: { current: boolean }) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchAllSheets();
+      if (cancelledRef.current) return;
+      const result = processData(data);
+      setPeople(result.people);
+      setLastUpdated(new Date());
+    } catch (err) {
+      if (!cancelledRef.current) setError(err instanceof Error ? err.message : "Erro ao carregar dados");
+    } finally {
+      if (!cancelledRef.current) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchAllSheets();
-        if (cancelled) return;
-        const result = processData(data);
-        setPeople(result.people);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Erro ao carregar dados");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+    const cancelledRef = { current: false };
+    loadData(cancelledRef);
+    return () => { cancelled = true; cancelledRef.current = true; };
   }, []);
 
-  return { people, loading, error };
+  const refresh = () => {
+    const cancelledRef = { current: false };
+    loadData(cancelledRef);
+  };
+
+  return { people, loading, error, refresh, lastUpdated };
 }
