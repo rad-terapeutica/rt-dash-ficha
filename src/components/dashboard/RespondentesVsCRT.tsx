@@ -1,21 +1,14 @@
-import { getResponseDistribution, type Person } from "@/data/mockData";
+import { getSurveyDistribution, getSurveyFields, type Person } from "@/data/dataProcessor";
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
 interface RespondentesVsCRTProps {
   people: Person[];
 }
 
-const fields = [
-  { key: "motivoPrincipal" as const, label: "Motivo Principal" },
-  { key: "momentoAtual" as const, label: "Momento Atual" },
-  { key: "intencao" as const, label: "Intenção" },
-  { key: "faixa" as const, label: "Faixa de Renda" },
-  { key: "perfil" as const, label: "Perfil" },
-];
-
 const RespondentesVsCRT = ({ people }: RespondentesVsCRTProps) => {
-  const respondentes = people.filter((p) => p.respondeuPesquisa);
-  const crtPeople = people.filter((p) => p.virouCRT);
+  const respondentes = people.filter(p => p.respondeuPesquisa);
+  const crtPeople = people.filter(p => p.virouCRT);
+  const fields = getSurveyFields();
 
   return (
     <div className="dashboard-card">
@@ -23,14 +16,14 @@ const RespondentesVsCRT = ({ people }: RespondentesVsCRTProps) => {
       <p className="section-subtitle mb-6">Comparação de padrões entre quem respondeu e quem converteu</p>
 
       <div className="space-y-6">
-        {fields.map((f) => {
-          const allDist = getResponseDistribution(respondentes, f.key);
-          const crtDist = getResponseDistribution(crtPeople, f.key);
+        {fields.map(f => {
+          const allDist = getSurveyDistribution(respondentes, f.key);
+          const crtDist = getSurveyDistribution(crtPeople, f.key);
           const totalAll = allDist.reduce((s, d) => s + d.total, 0);
           const totalCrt = crtDist.reduce((s, d) => s + d.total, 0);
 
-          const merged = allDist.map((a) => {
-            const c = crtDist.find((d) => d.value === a.value);
+          const merged = allDist.map(a => {
+            const c = crtDist.find(d => d.value === a.value);
             const pctAll = totalAll > 0 ? (a.total / totalAll) * 100 : 0;
             const pctCrt = totalCrt > 0 && c ? (c.total / totalCrt) * 100 : 0;
             const lift = pctAll > 0 ? ((pctCrt - pctAll) / pctAll) * 100 : 0;
@@ -41,7 +34,7 @@ const RespondentesVsCRT = ({ people }: RespondentesVsCRTProps) => {
             <div key={f.key}>
               <h4 className="text-sm font-semibold mb-3 text-foreground">{f.label}</h4>
               <div className="space-y-2">
-                {merged.slice(0, 4).map((m) => (
+                {merged.slice(0, 4).map(m => (
                   <div key={m.value} className="grid grid-cols-[1fr_80px_80px_80px] items-center gap-2 text-sm">
                     <span className="truncate text-muted-foreground">{m.value}</span>
                     <span className="text-right font-mono">{m.pctAll.toFixed(1)}%</span>
