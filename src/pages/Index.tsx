@@ -9,14 +9,15 @@ import ResponseDistribution from "@/components/dashboard/ResponseDistribution";
 import RespondentesVsCRT from "@/components/dashboard/RespondentesVsCRT";
 import DetailTable from "@/components/dashboard/DetailTable";
 import InsightsPanel from "@/components/dashboard/InsightsPanel";
-import { BarChart3, Loader2, AlertCircle } from "lucide-react";
+import { BarChart3, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 
 const Index = () => {
-  const { people, loading, error } = useSheetData();
+  const { people, loading, error, refresh, lastUpdated } = useSheetData();
   const [turmaFilter, setTurmaFilter] = useState("all");
   const [statusResposta, setStatusResposta] = useState("all");
   const [statusCRT, setStatusCRT] = useState("all");
   const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const turmaList = useMemo(() => getTurmaList(people), [people]);
 
