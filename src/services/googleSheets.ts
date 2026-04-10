@@ -43,7 +43,7 @@ async function fetchCSV(url: string): Promise<string[][]> {
   if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
   const text = await res.text();
   const rows = parseCSV(text);
-  return rows.length > 1 ? rows.slice(1) : []; // skip header
+  return rows.length > 1 ? rows.slice(1) : [];
 }
 
 export interface LeadRow {
@@ -114,22 +114,21 @@ function parseSurveyRow(row: string[]): SurveyRow {
 
 export interface SheetData {
   turmas: LeadRow[];
-  compraAprovada: LeadRow[];
   crt: LeadRow[];
   survey: SurveyRow[];
 }
 
 export async function fetchAllSheets(): Promise<SheetData> {
-  const [turmaRows, compraRows, crtRows, surveyRows] = await Promise.all([
+  // ONLY fetch desafio_turma, Desafio_crt, and survey
+  // desafio_compra_aprvada is IGNORED completely
+  const [turmaRows, crtRows, surveyRows] = await Promise.all([
     fetchCSV(csvUrl(SHEET1_ID, "desafio_turma")),
-    fetchCSV(csvUrl(SHEET1_ID, "desafio_compra_aprvada")),
     fetchCSV(csvUrl(SHEET1_ID, "Desafio_crt")),
     fetchCSV(csvUrl(SHEET2_ID, "Sheet1")),
   ]);
 
   return {
     turmas: turmaRows.map(parseLeadRow),
-    compraAprovada: compraRows.map(parseLeadRow),
     crt: crtRows.map(parseLeadRow),
     survey: surveyRows.map(parseSurveyRow),
   };

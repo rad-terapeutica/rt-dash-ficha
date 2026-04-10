@@ -1,4 +1,4 @@
-import type { SheetData, LeadRow, SurveyRow } from "@/services/googleSheets";
+import type { SheetData, SurveyRow } from "@/services/googleSheets";
 
 // ---- Types ----
 
@@ -10,7 +10,7 @@ export interface Person {
   turmaTag: string;
   crtTag: string | null;
   respondeuPesquisa: boolean;
-  virouCRT: boolean;
+  virouCRT: boolean; // only true if respondeuPesquisa AND in CRT list
   survey: SurveyRow | null;
 }
 
@@ -31,51 +31,42 @@ export interface GlobalStats {
   pctRespondentes: number;
   pctCrtRespondentes: number;
   pctCrtTotal: number;
-  compraAprovada: number;
-}
-
-// ---- CRT tag → turma mapping ----
-// CRT20_MAR_2026_ALUNO_DESAFIO_23/02/26 → Desafio - 23/02/26
-
-function crtTagToTurma(crtTag: string): string | null {
-  const match = crtTag.match(/ALUNO_DESAFIO_(\d{2}\/\d{2}\/\d{2})$/);
-  if (match) return `Desafio - ${match[1]}`;
-  return null;
 }
 
 // ---- Processing ----
+// 
+// LOGIC (definitive):
+// 1. Base = desafio_turma (all leads by turma)
+// 2. Cross desafio_turma × pesquisa by email → respondeuPesquisa
+// 3. Among respondents, cross with Desafio_crt by email → virouCRT
+// 4. desafio_compra_aprvada is COMPLETELY IGNORED
 
 export function processData(data: SheetData) {
-  // Build sets by email
+  // Build survey lookup by email
   const surveyByEmail = new Map<string, SurveyRow>();
   for (const s of data.survey) {
     if (s.email) surveyByEmail.set(s.email, s);
   }
 
-  // CRT emails grouped by turma
-  const crtByEmail = new Map<string, string>(); // email → crtTag
-  const crtEmailsByTurma = new Map<string, Set<string>>();
+  // Build CRT email set
+  const crtEmails = new Map<string, string>(); // email → crtTag
   for (const c of data.crt) {
-    if (c.email) {
-      crtByEmail.set(c.email, c.tag);
-      const turma = crtTagToTurma(c.tag);
-      if (turma) {
-        if (!crtEmailsByTurma.has(turma)) crtEmailsByTurma.set(turma, new Set());
-        crtEmailsByTurma.get(turma)!.add(c.email);
-      }
-    }
+    if (c.email) crtEmails.set(c.email, c.tag);
   }
 
-  // Build people from turmas
+  // Build people from desafio_turma ONLY
   const people: Person[] = [];
   let id = 0;
   for (const t of data.turmas) {
     if (!t.email) continue;
+
+    // Step 2: Did this person respond to the survey?
     const survey = surveyByEmail.get(t.email) || null;
-    const crtTag = crtByEmail.get(t.email) || null;
-    // For CRT, check if the CRT tag corresponds to THIS turma
-    const crtTurma = crtTag ? crtTagToTurma(crtTag) : null;
-    const virouCRT = crtTag != null; // person has any CRT tag
+    const respondeuPesquisa = survey != null;
+
+    // Step 3: ONLY if they responded, check if they're in CRT
+    const crtTag = respondeuPesquisa ? (crtEmails.get(t.email) || null) : null;
+    const virouCRT = crtTag != null;
 
     people.push({
       id: String(++id),
@@ -84,18 +75,18 @@ export function processData(data: SheetData) {
       turma: t.tag,
       turmaTag: t.tag,
       crtTag,
-      respondeuPesquisa: survey != null,
+      respondeuPesquisa,
       virouCRT,
       survey,
     });
   }
 
-  return { people, compraAprovadaCount: data.compraAprovada.length };
+  return { people };
 }
 
 // ---- Stats ----
 
-export function getGlobalStats(people: Person[], compraAprovadaCount: number): GlobalStats {
+export function getGlobalStats(people: Person[]): GlobalStats {
   const total = people.length;
   const respondentes = people.filter(p => p.respondeuPesquisa).length;
   const crt = people.filter(p => p.virouCRT).length;
@@ -106,7 +97,6 @@ export function getGlobalStats(people: Person[], compraAprovadaCount: number): G
     pctRespondentes: total > 0 ? (respondentes / total) * 100 : 0,
     pctCrtRespondentes: respondentes > 0 ? (crt / respondentes) * 100 : 0,
     pctCrtTotal: total > 0 ? (crt / total) * 100 : 0,
-    compraAprovada: compraAprovadaCount,
   };
 }
 
@@ -164,7 +154,6 @@ export function getSurveyDistribution(people: Person[], field: SurveyFieldKey) {
     .sort((a, b) => b.total - a.total);
 }
 
-// Area breakdown (boolean columns)
 export function getAreaDistribution(people: Person[]) {
   const areas = [
     { key: "areaProsperdade" as const, label: "Prosperidade" },
