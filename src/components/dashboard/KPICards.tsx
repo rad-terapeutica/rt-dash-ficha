@@ -8,7 +8,6 @@ interface KPICardsProps {
   pctRespondentes: number;
   pctCrtRespondentes: number;
   pctCrtTotal: number;
-  compraAprovada: number;
 }
 
 const kpis: Array<{ key: keyof KPICardsProps; label: string; icon: typeof Users; color: string; suffix?: string }> = [
