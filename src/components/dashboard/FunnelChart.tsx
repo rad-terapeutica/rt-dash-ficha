@@ -9,9 +9,9 @@ interface FunnelChartProps {
 
 const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
   const stages = [
-    { label: "Turma do Desafio", value: total, icon: Users, color: "hsl(var(--chart-2))", pct: 100 },
-    { label: "Respondeu Pesquisa", value: respondentes, icon: FileCheck, color: "hsl(var(--chart-3))", pct: total > 0 ? (respondentes / total) * 100 : 0 },
-    { label: "Virou CRT", value: crt, icon: Award, color: "hsl(var(--chart-4))", pct: total > 0 ? (crt / total) * 100 : 0 },
+    { label: "Base da Turma", value: total, icon: Users, color: "hsl(var(--chart-2))", pct: 100 },
+    { label: "Responderam a Pesquisa", value: respondentes, icon: FileCheck, color: "hsl(var(--chart-3))", pct: total > 0 ? (respondentes / total) * 100 : 0 },
+    { label: "Na Comu RT", value: crt, icon: Award, color: "hsl(var(--chart-4))", pct: total > 0 ? (crt / total) * 100 : 0 },
   ];
 
   const drops = [
@@ -21,8 +21,8 @@ const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
 
   return (
     <div className="dashboard-card h-full">
-      <h3 className="section-title mb-1">Funil da Jornada</h3>
-      <p className="section-subtitle mb-6">Turma → Pesquisa → CRT</p>
+      <h3 className="section-title mb-1">Funil da Turma</h3>
+      <p className="section-subtitle mb-6">Jornada completa: da base total até a Comu RT</p>
 
       <div className="flex flex-col items-center gap-2">
         {stages.map((stage, i) => {

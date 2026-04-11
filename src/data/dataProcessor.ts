@@ -55,10 +55,16 @@ export function processData(data: SheetData) {
   }
 
   // Build people from desafio_turma ONLY
+  // Deduplicate by email+tag so incremental appends don't inflate counts
+  const seen = new Set<string>();
   const people: Person[] = [];
   let id = 0;
   for (const t of data.turmas) {
     if (!t.email) continue;
+
+    const dedupeKey = `${t.email}||${t.tag}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
 
     // Step 2: Did this person respond to the survey?
     const survey = surveyByEmail.get(t.email) || null;
@@ -152,6 +158,73 @@ export function getSurveyDistribution(people: Person[], field: SurveyFieldKey) {
   return Array.from(dist.entries())
     .map(([value, stats]) => ({ value, ...stats }))
     .sort((a, b) => b.total - a.total);
+}
+
+export interface DailyResponse {
+  date: string;       // dd/mm/yyyy
+  dateISO: string;    // yyyy-mm-dd (for sorting)
+  count: number;
+}
+
+export interface DailyResponseStats {
+  daily: DailyResponse[];
+  total: number;
+  bestDay: DailyResponse | null;
+  avgPerDay: number;
+}
+
+function normalizeDate(raw: string): { display: string; iso: string } | null {
+  const datePart = raw.split(" ")[0];
+  if (!datePart) return null;
+
+  // Format: yyyy-mm-dd (ISO)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const [y, m, d] = datePart.split("-");
+    return { display: `${d}/${m}/${y}`, iso: datePart };
+  }
+
+  // Format: dd/mm/yyyy
+  if (datePart.includes("/")) {
+    const parts = datePart.split("/");
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      const fullYear = y.length === 2 ? `20${y}` : y;
+      return {
+        display: `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${fullYear}`,
+        iso: `${fullYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`,
+      };
+    }
+  }
+
+  return null;
+}
+
+export function getDailyResponses(people: Person[]): DailyResponseStats {
+  const dayMap = new Map<string, { display: string; count: number }>();
+
+  for (const p of people) {
+    if (!p.survey || !p.survey.submittedAt) continue;
+    const parsed = normalizeDate(p.survey.submittedAt);
+    if (!parsed) continue;
+    const existing = dayMap.get(parsed.iso);
+    if (existing) {
+      existing.count++;
+    } else {
+      dayMap.set(parsed.iso, { display: parsed.display, count: 1 });
+    }
+  }
+
+  const daily: DailyResponse[] = Array.from(dayMap.entries())
+    .map(([iso, { display, count }]) => ({ date: display, dateISO: iso, count }))
+    .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+
+  const total = daily.reduce((s, d) => s + d.count, 0);
+  const bestDay = daily.length > 0
+    ? daily.reduce((best, d) => d.count > best.count ? d : best)
+    : null;
+  const avgPerDay = daily.length > 0 ? total / daily.length : 0;
+
+  return { daily, total, bestDay, avgPerDay };
 }
 
 export function getAreaDistribution(people: Person[]) {

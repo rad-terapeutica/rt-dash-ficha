@@ -27,13 +27,13 @@ const ResponseDistribution = ({ people }: ResponseDistributionProps) => {
     <div className="dashboard-card">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="section-title">Distribuição das Respostas</h3>
-          <p className="section-subtitle">Análise das respostas da ficha de interesse</p>
+          <h3 className="section-title">Perfil dos Respondentes</h3>
+          <p className="section-subtitle">Distribuição das respostas da ficha de interesse por categoria</p>
         </div>
         <div className="flex items-center gap-2">
           <Switch id="crt-filter" checked={onlyCRT} onCheckedChange={setOnlyCRT} />
           <Label htmlFor="crt-filter" className="text-sm text-muted-foreground cursor-pointer">
-            Apenas CRT
+            Somente Comu CRT
           </Label>
         </div>
       </div>

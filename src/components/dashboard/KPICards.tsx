@@ -1,4 +1,4 @@
-import { Users, FileCheck, TrendingUp, Award, Target, BarChart3 } from "lucide-react";
+import { Users, FileCheck, TrendingUp, Award, Target } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface KPICardsProps {
@@ -10,22 +10,62 @@ interface KPICardsProps {
   pctCrtTotal: number;
 }
 
-const kpis: Array<{ key: keyof KPICardsProps; label: string; icon: typeof Users; color: string; suffix?: string }> = [
-  { key: "total", label: "Total da Turma", icon: Users, color: "hsl(var(--chart-2))" },
-  { key: "respondentes", label: "Respondentes", icon: FileCheck, color: "hsl(var(--chart-3))" },
-  { key: "pctRespondentes", label: "% Respondentes", icon: TrendingUp, color: "hsl(var(--primary))", suffix: "%" },
-  { key: "crt", label: "Total CRT", icon: Award, color: "hsl(var(--chart-4))" },
-  { key: "pctCrtRespondentes", label: "% CRT / Respond.", icon: Target, color: "hsl(var(--success))", suffix: "%" },
-  { key: "pctCrtTotal", label: "% CRT / Total", icon: BarChart3, color: "hsl(var(--info))", suffix: "%" },
+const kpis: Array<{
+  key: keyof KPICardsProps;
+  label: string;
+  desc: string;
+  icon: typeof Users;
+  color: string;
+  suffix?: string;
+}> = [
+  {
+    key: "total",
+    label: "Total da Turma",
+    desc: "Contatos identificados nesta turma do Desafio",
+    icon: Users,
+    color: "hsl(var(--chart-2))",
+  },
+  {
+    key: "respondentes",
+    label: "Respostas da Pesquisa",
+    desc: "Contatos que preencheram a ficha de interesse",
+    icon: FileCheck,
+    color: "hsl(var(--chart-3))",
+  },
+  {
+    key: "pctRespondentes",
+    label: "Adesão à Pesquisa",
+    desc: "Percentual da turma que respondeu a ficha",
+    icon: TrendingUp,
+    color: "hsl(var(--primary))",
+    suffix: "%",
+  },
+  {
+    key: "crt",
+    label: "Na Comu RT",
+    desc: "Contatos que avançaram para a Comunidade RT",
+    icon: Award,
+    color: "hsl(var(--chart-4))",
+  },
+  {
+    key: "pctCrtRespondentes",
+    label: "Conversão para Comu RT",
+    desc: "Percentual dos respondentes que entraram na Comu RT",
+    icon: Target,
+    color: "hsl(var(--success))",
+    suffix: "%",
+  },
 ];
 
 const KPICards = (props: KPICardsProps) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
       {kpis.map((kpi, i) => {
         const Icon = kpi.icon;
         const value = props[kpi.key];
-        const formatted = kpi.suffix ? `${Number(value).toFixed(1)}%` : Number(value).toLocaleString("pt-BR");
+        const formatted = kpi.suffix
+          ? `${Number(value).toFixed(1)}%`
+          : Number(value).toLocaleString("pt-BR");
 
         return (
           <motion.div
@@ -36,12 +76,20 @@ const KPICards = (props: KPICardsProps) => {
             className="kpi-card"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg" style={{ backgroundColor: `${kpi.color}20` }}>
+              <div
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${kpi.color}20` }}
+              >
                 <Icon className="w-4 h-4" style={{ color: kpi.color }} />
               </div>
             </div>
-            <div className="stat-value" style={{ color: kpi.color }}>{formatted}</div>
+            <div className="stat-value" style={{ color: kpi.color }}>
+              {formatted}
+            </div>
             <div className="stat-label mt-1">{kpi.label}</div>
+            <div className="text-[11px] text-muted-foreground/60 mt-0.5 leading-tight">
+              {kpi.desc}
+            </div>
           </motion.div>
         );
       })}

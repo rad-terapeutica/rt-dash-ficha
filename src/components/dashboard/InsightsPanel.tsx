@@ -13,8 +13,8 @@ const InsightsPanel = ({ people }: InsightsPanelProps) => {
   if (stats.length === 0) {
     return (
       <div className="dashboard-card h-full">
-        <h3 className="section-title mb-1">Insights Automáticos</h3>
-        <p className="section-subtitle">Sem dados suficientes</p>
+        <h3 className="section-title mb-1">Leituras Rápidas</h3>
+        <p className="section-subtitle">Dados insuficientes para gerar insights</p>
       </div>
     );
   }
@@ -30,39 +30,39 @@ const InsightsPanel = ({ people }: InsightsPanelProps) => {
     {
       icon: TrendingUp,
       color: "hsl(var(--chart-2))",
-      title: "Maior taxa de resposta",
-      text: `${bestRespTurma.turma.replace("Desafio - ", "")} com ${bestRespTurma.pctResp.toFixed(1)}% de adesão`,
+      title: "Maior adesão à pesquisa",
+      text: `Turma ${bestRespTurma.turma.replace("Desafio - ", "")} com ${bestRespTurma.pctResp.toFixed(1)}% de preenchimento`,
     },
     {
       icon: Target,
       color: "hsl(var(--chart-4))",
-      title: "Maior conversão CRT",
-      text: `${bestCrtTurma.turma.replace("Desafio - ", "")} com ${bestCrtTurma.pctCrt.toFixed(1)}% de conversão`,
+      title: "Melhor conversão para Comu RT",
+      text: `Turma ${bestCrtTurma.turma.replace("Desafio - ", "")} com ${bestCrtTurma.pctCrt.toFixed(1)}% de avanço`,
     },
     {
       icon: BarChart3,
       color: "hsl(var(--chart-3))",
-      title: "Taxa média de resposta",
-      text: `${avgResp.toFixed(1)}% das pessoas nas turmas responderam a pesquisa`,
+      title: "Adesão média entre turmas",
+      text: `${avgResp.toFixed(1)}% dos contatos responderam a ficha de interesse`,
     },
     {
       icon: Users,
       color: "hsl(var(--success))",
-      title: "Investimento mais comum (CRT)",
-      text: topInvestimento ? `"${topInvestimento.value}" — ${((topInvestimento.total / crtPeople.length) * 100).toFixed(0)}% dos CRT` : "Dados insuficientes",
+      title: "Investimento predominante na Comu RT",
+      text: topInvestimento ? `"${topInvestimento.value}" — ${((topInvestimento.total / crtPeople.length) * 100).toFixed(0)}% dos membros` : "Dados insuficientes",
     },
     {
       icon: Lightbulb,
       color: "hsl(var(--primary))",
-      title: "Interesse em tratar outros (CRT)",
-      text: topInteresse ? `"${topInteresse.value}" — ${((topInteresse.total / crtPeople.length) * 100).toFixed(0)}% dos CRT` : "Dados insuficientes",
+      title: "Interesse em tratar outras pessoas",
+      text: topInteresse ? `"${topInteresse.value}" — ${((topInteresse.total / crtPeople.length) * 100).toFixed(0)}% dos membros da Comu RT` : "Dados insuficientes",
     },
   ];
 
   return (
     <div className="dashboard-card h-full">
-      <h3 className="section-title mb-1">Insights Automáticos</h3>
-      <p className="section-subtitle mb-6">Destaques extraídos dos dados reais</p>
+      <h3 className="section-title mb-1">Leituras Rápidas</h3>
+      <p className="section-subtitle mb-6">Destaques sobre adesão, conversão e comportamento da turma</p>
 
       <div className="grid gap-3">
         {insights.map((insight, i) => {

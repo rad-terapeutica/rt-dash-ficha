@@ -1,50 +1,131 @@
-import { Search, Filter, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BarChart3, Filter, X, RefreshCw, MousePointerClick } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import type { CrossFilter } from "@/pages/Index";
 
 interface FilterBarProps {
   turmaFilter: string;
   statusResposta: string;
   statusCRT: string;
-  search: string;
   turmaList: string[];
+  filteredCount: number;
+  isRefreshing: boolean;
+  lastUpdated: Date | null;
+  crossFilter: CrossFilter | null;
   onTurmaChange: (v: string) => void;
   onStatusRespostaChange: (v: string) => void;
   onStatusCRTChange: (v: string) => void;
-  onSearchChange: (v: string) => void;
   onClear: () => void;
+  onClearCrossFilter: () => void;
+  onRefresh: () => void;
 }
 
 const FilterBar = ({
-  turmaFilter, statusResposta, statusCRT, search, turmaList,
-  onTurmaChange, onStatusRespostaChange, onStatusCRTChange, onSearchChange, onClear,
+  turmaFilter,
+  statusResposta,
+  statusCRT,
+  turmaList,
+  filteredCount,
+  isRefreshing,
+  lastUpdated,
+  crossFilter,
+  onTurmaChange,
+  onStatusRespostaChange,
+  onStatusCRTChange,
+  onClear,
+  onClearCrossFilter,
+  onRefresh,
 }: FilterBarProps) => {
-  const hasFilters = turmaFilter !== "all" || statusResposta !== "all" || statusCRT !== "all" || search !== "";
+  const hasFilters =
+    turmaFilter !== "all" ||
+    statusResposta !== "all" ||
+    statusCRT !== "all";
 
   return (
-    <div className="filter-bar">
+    <div className="filter-bar space-y-4">
+      {/* Row 1: Branding + meta */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-[var(--glow-primary)]">
+            <BarChart3 className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold tracking-tight leading-tight">
+              Ficha de Interesse{" "}
+              <span className="text-primary">×</span> Desafio{" "}
+              <span className="text-primary">×</span> COMU RT
+            </h1>
+            <p className="text-[11px] text-muted-foreground">
+              Turma do Desafio → Respondeu Pesquisa → Comu RT
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-muted border border-border rounded-lg transition-colors disabled:opacity-50"
+            title="Atualizar dados das planilhas"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">Atualizar</span>
+          </button>
+          {lastUpdated && (
+            <span className="text-[11px] text-muted-foreground hidden md:block">
+              {lastUpdated.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
+          <div className="text-xs text-muted-foreground font-mono bg-muted/50 px-2.5 py-1 rounded-lg border border-border">
+            {filteredCount.toLocaleString("pt-BR")}
+          </div>
+          <div
+            className="w-2 h-2 rounded-full bg-success animate-pulse"
+            title="Dados reais"
+          />
+        </div>
+      </div>
+
+      {/* Row 2: Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-primary">
-          <Filter className="w-4 h-4" />
-          <span className="text-sm font-semibold">Filtros</span>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Filter className="w-3.5 h-3.5" />
+          <span className="text-xs font-semibold uppercase tracking-wider">
+            Filtros
+          </span>
         </div>
 
         <Select value={turmaFilter} onValueChange={onTurmaChange}>
-          <SelectTrigger className="w-[220px] h-9 text-sm bg-muted/50 border-border">
+          <SelectTrigger className="w-[200px] h-8 text-xs bg-muted/50 border-border">
             <SelectValue placeholder="Turma" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as turmas</SelectItem>
             {turmaList.map((t) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select value={statusResposta} onValueChange={onStatusRespostaChange}>
-          <SelectTrigger className="w-[180px] h-9 text-sm bg-muted/50 border-border">
-            <SelectValue placeholder="Status Resposta" />
+        <Select
+          value={statusResposta}
+          onValueChange={onStatusRespostaChange}
+        >
+          <SelectTrigger className="w-[160px] h-8 text-xs bg-muted/50 border-border">
+            <SelectValue placeholder="Pesquisa" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
@@ -54,31 +135,45 @@ const FilterBar = ({
         </Select>
 
         <Select value={statusCRT} onValueChange={onStatusCRTChange}>
-          <SelectTrigger className="w-[160px] h-9 text-sm bg-muted/50 border-border">
-            <SelectValue placeholder="Status CRT" />
+          <SelectTrigger className="w-[150px] h-8 text-xs bg-muted/50 border-border">
+            <SelectValue placeholder="Comu RT" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="sim">CRT</SelectItem>
-            <SelectItem value="nao">Não CRT</SelectItem>
+            <SelectItem value="sim">Na Comu RT</SelectItem>
+            <SelectItem value="nao">Fora da Comu RT</SelectItem>
           </SelectContent>
         </Select>
 
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou email..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 h-9 text-sm bg-muted/50 border-border"
-          />
-        </div>
-
         {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={onClear} className="text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4 mr-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClear}
+            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-3.5 h-3.5 mr-1" />
             Limpar
           </Button>
+        )}
+
+        {crossFilter && (
+          <div className="flex items-center gap-2 ml-1">
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 border border-primary/25 text-primary">
+              <MousePointerClick className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="text-xs font-medium truncate max-w-[280px]">
+                {crossFilter.themeTitle} = {crossFilter.value}
+              </span>
+              <button
+                onClick={onClearCrossFilter}
+                className="ml-1 p-0.5 rounded hover:bg-primary/20 transition-colors flex-shrink-0"
+                title="Remover filtro contextual"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
