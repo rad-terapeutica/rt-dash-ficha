@@ -41,6 +41,12 @@ export interface GlobalStats {
 // 3. Among respondents, cross with Desafio_crt by email → virouCRT
 // 4. desafio_compra_aprvada is COMPLETELY IGNORED
 
+export interface UnmatchedSurvey {
+  email: string;
+  nome: string;
+  submittedAt: string;
+}
+
 export function processData(data: SheetData) {
   // Build survey lookup by email
   const surveyByEmail = new Map<string, SurveyRow>();
@@ -52,6 +58,12 @@ export function processData(data: SheetData) {
   const crtEmails = new Map<string, string>(); // email → crtTag
   for (const c of data.crt) {
     if (c.email) crtEmails.set(c.email, c.tag);
+  }
+
+  // Build turma email set for unmatched detection
+  const turmaEmails = new Set<string>();
+  for (const t of data.turmas) {
+    if (t.email) turmaEmails.add(t.email);
   }
 
   // Build people from desafio_turma ONLY
@@ -87,7 +99,16 @@ export function processData(data: SheetData) {
     });
   }
 
-  return { people, rawSurveyCount: data.survey.length };
+  // Build unmatched survey list (responded but email not in any turma)
+  const unmatchedSurveys: UnmatchedSurvey[] = data.survey
+    .filter((s) => s.email && !turmaEmails.has(s.email))
+    .map((s) => ({
+      email: s.email,
+      nome: s.nome,
+      submittedAt: s.submittedAt,
+    }));
+
+  return { people, rawSurveyCount: data.survey.length, unmatchedSurveys };
 }
 
 // ---- Stats ----
