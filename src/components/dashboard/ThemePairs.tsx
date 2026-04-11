@@ -96,7 +96,7 @@ const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-foreground">
             Mapa de Perfil e Comparativo
@@ -104,12 +104,12 @@ const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => 
           <p className="text-sm text-muted-foreground">
             Distribuição das respostas e comparação entre Pesquisa e Comu RT,
             organizadas por tema
-            <span className="ml-2 text-muted-foreground/50">
+            <span className="hidden sm:inline ml-2 text-muted-foreground/50">
               — clique em uma categoria para filtrar a dashboard
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card self-start sm:self-auto flex-shrink-0">
           <Switch
             id="rt-global"
             checked={onlyRT}
@@ -117,7 +117,7 @@ const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => 
           />
           <Label
             htmlFor="rt-global"
-            className="text-sm text-muted-foreground cursor-pointer"
+            className="text-sm text-muted-foreground cursor-pointer whitespace-nowrap"
           >
             Perfil: somente Comu RT
           </Label>
@@ -170,7 +170,7 @@ function ProfileCard({
 
   return (
     <div
-      className={`dashboard-card transition-all duration-300 ${
+      className={`dashboard-card transition-all duration-300 overflow-hidden ${
         isThisThemeActive
           ? "ring-1 ring-primary/40 shadow-[0_0_20px_hsl(var(--primary)/0.08)]"
           : ""
@@ -188,8 +188,8 @@ function ProfileCard({
         {theme.profileDesc}
       </p>
 
-      <div className="grid grid-cols-[160px_1fr] gap-6 items-start">
-        <div className="h-[160px]">
+      <div className="flex flex-col items-center sm:grid sm:grid-cols-[160px_1fr] gap-6 sm:items-start">
+        <div className="h-[160px] w-[160px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -247,7 +247,7 @@ function ProfileCard({
           </ResponsiveContainer>
         </div>
 
-        <div className="space-y-3 pt-1">
+        <div className="space-y-3 pt-1 w-full min-w-0">
           {sliced.map((d, i) => {
             const pct = total > 0 ? (d.total / total) * 100 : 0;
             const barWidth = maxVal > 0 ? (d.total / maxVal) * 100 : 0;
@@ -342,11 +342,11 @@ function CompareCard({
       </p>
 
       {/* Header */}
-      <div className="grid grid-cols-[1fr_60px_60px_68px] items-center gap-2 mb-3 pb-2 border-b border-border/50">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Categoria</span>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Pesquisa</span>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Comu RT</span>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Variação</span>
+      <div className="grid grid-cols-[1fr_44px_44px_52px] sm:grid-cols-[1fr_60px_60px_68px] items-center gap-1.5 sm:gap-2 mb-3 pb-2 border-b border-border/50">
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Categoria</span>
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Pesq.</span>
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">CRT</span>
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-medium text-right">Var.</span>
       </div>
 
       {/* Rows */}
@@ -354,18 +354,18 @@ function CompareCard({
         {merged.slice(0, 5).map((m) => (
           <div
             key={m.value}
-            className="grid grid-cols-[1fr_60px_60px_68px] items-center gap-2 py-2.5 border-b border-border/20 last:border-0"
+            className="grid grid-cols-[1fr_44px_44px_52px] sm:grid-cols-[1fr_60px_60px_68px] items-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 border-b border-border/20 last:border-0"
           >
-            <span className="text-xs text-muted-foreground truncate">
+            <span className="text-[11px] sm:text-xs text-muted-foreground truncate">
               {m.value}
             </span>
-            <span className="text-right text-xs font-mono text-foreground/60">
+            <span className="text-right text-[11px] sm:text-xs font-mono text-foreground/60">
               {m.pctAll.toFixed(1)}%
             </span>
-            <span className="text-right text-xs font-mono font-bold text-foreground">
+            <span className="text-right text-[11px] sm:text-xs font-mono font-bold text-foreground">
               {m.pctRt.toFixed(1)}%
             </span>
-            <div className="flex items-center justify-end gap-1">
+            <div className="flex items-center justify-end gap-0.5 sm:gap-1">
               {m.lift > 5 ? (
                 <ArrowUpRight className="w-3 h-3 text-success" />
               ) : m.lift < -5 ? (
@@ -374,7 +374,7 @@ function CompareCard({
                 <Minus className="w-3 h-3 text-muted-foreground" />
               )}
               <span
-                className={`font-mono text-xs ${
+                className={`font-mono text-[11px] sm:text-xs ${
                   m.lift > 5
                     ? "text-success"
                     : m.lift < -5
