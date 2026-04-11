@@ -87,7 +87,7 @@ export function processData(data: SheetData) {
     });
   }
 
-  return { people };
+  return { people, rawSurveyCount: data.survey.length };
 }
 
 // ---- Stats ----

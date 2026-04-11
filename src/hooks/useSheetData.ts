@@ -4,6 +4,7 @@ import { processData, type Person } from "@/data/dataProcessor";
 
 interface UseSheetDataResult {
   people: Person[];
+  rawSurveyCount: number;
   loading: boolean;
   error: string | null;
   refresh: () => void;
@@ -12,6 +13,7 @@ interface UseSheetDataResult {
 
 export function useSheetData(): UseSheetDataResult {
   const [people, setPeople] = useState<Person[]>([]);
+  const [rawSurveyCount, setRawSurveyCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -24,6 +26,7 @@ export function useSheetData(): UseSheetDataResult {
       if (cancelledRef.current) return;
       const result = processData(data);
       setPeople(result.people);
+      setRawSurveyCount(result.rawSurveyCount);
       setLastUpdated(new Date());
     } catch (err) {
       if (!cancelledRef.current) setError(err instanceof Error ? err.message : "Erro ao carregar dados");
@@ -44,5 +47,5 @@ export function useSheetData(): UseSheetDataResult {
     loadData(cancelledRef);
   };
 
-  return { people, loading, error, refresh, lastUpdated };
+  return { people, rawSurveyCount, loading, error, refresh, lastUpdated };
 }

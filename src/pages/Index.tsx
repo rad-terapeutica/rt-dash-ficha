@@ -26,7 +26,7 @@ const AREA_LABEL_TO_KEY: Record<string, string> = {
 };
 
 const Index = () => {
-  const { people, loading, error, refresh, lastUpdated } = useSheetData();
+  const { people, rawSurveyCount, loading, error, refresh, lastUpdated } = useSheetData();
   const [turmaFilter, setTurmaFilter] = useState("all");
   const [statusResposta, setStatusResposta] = useState("all");
   const [statusCRT, setStatusCRT] = useState("all");
@@ -152,7 +152,12 @@ const Index = () => {
           </div>
         </div>
 
-        <DailyResponses people={filtered} turmaFilter={turmaFilter} />
+        <DailyResponses
+          people={filtered}
+          turmaFilter={turmaFilter}
+          rawSurveyCount={rawSurveyCount}
+          identifiedCount={people.filter((p) => p.respondeuPesquisa).length}
+        />
 
         <ThemePairs
           people={filtered}
