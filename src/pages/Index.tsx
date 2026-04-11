@@ -179,7 +179,7 @@ const Index = () => {
               people={filtered}
               turmaFilter={turmaFilter}
               rawSurveyCount={rawSurveyCount}
-              identifiedCount={people.filter((p) => p.respondeuPesquisa).length}
+              identifiedCount={new Set(people.filter((p) => p.respondeuPesquisa).map((p) => p.email)).size}
               unmatchedSurveys={unmatchedSurveys}
             />
 

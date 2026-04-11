@@ -41,9 +41,20 @@ function getStrongestSignal(
 }
 
 const InsightsPanel = ({ people }: InsightsPanelProps) => {
-  const stats = getTurmaStats(people);
-  const buyers = people.filter((p) => p.virouCRT);
-  const nonBuyers = people.filter((p) => p.respondeuPesquisa && !p.virouCRT);
+  const stats = getTurmaStats(people); // per-turma stats — keeps email+tag
+  // Deduplicate buyers/nonBuyers by email for aggregate signal analysis
+  const seenBuyer = new Set<string>();
+  const seenNon = new Set<string>();
+  const buyers = people.filter((p) => {
+    if (!p.virouCRT || seenBuyer.has(p.email)) return false;
+    seenBuyer.add(p.email);
+    return true;
+  });
+  const nonBuyers = people.filter((p) => {
+    if (!p.respondeuPesquisa || p.virouCRT || seenNon.has(p.email)) return false;
+    seenNon.add(p.email);
+    return true;
+  });
 
   if (stats.length === 0) {
     return (

@@ -69,11 +69,23 @@ const AREA_FIELDS: FieldDef[] = [
 
 const ALL_FIELDS = [...SURVEY_FIELDS, ...AREA_FIELDS];
 
+// ---- Helpers ----
+
+/** Deduplicate people by email, keeping first occurrence */
+function dedupByEmail(list: Person[]): Person[] {
+  const seen = new Set<string>();
+  return list.filter((p) => {
+    if (seen.has(p.email)) return false;
+    seen.add(p.email);
+    return true;
+  });
+}
+
 // ---- Signal computation ----
 
 export function computeSignals(people: Person[]): Signal[] {
-  const buyers = people.filter((p) => p.virouCRT);
-  const nonBuyers = people.filter((p) => p.respondeuPesquisa && !p.virouCRT);
+  const buyers = dedupByEmail(people.filter((p) => p.virouCRT));
+  const nonBuyers = dedupByEmail(people.filter((p) => p.respondeuPesquisa && !p.virouCRT));
   const totalBuyers = buyers.length;
   const totalNonBuyers = nonBuyers.length;
 
@@ -156,7 +168,7 @@ export function computeScores(people: Person[], signals: Signal[]): PersonScore[
 
   const range = theoreticalMax - theoreticalMin;
 
-  const respondentes = people.filter((p) => p.respondeuPesquisa);
+  const respondentes = dedupByEmail(people.filter((p) => p.respondeuPesquisa));
 
   return respondentes.map((person) => {
     let rawScore = 0;
@@ -183,8 +195,8 @@ export function computeScores(people: Person[], signals: Signal[]): PersonScore[
 // ---- KPIs ----
 
 export function getLeadscoreKPIs(people: Person[], scores: PersonScore[]): LeadscoreKPIs {
-  const respondentes = people.filter((p) => p.respondeuPesquisa).length;
-  const compradores = people.filter((p) => p.virouCRT).length;
+  const respondentes = dedupByEmail(people.filter((p) => p.respondeuPesquisa)).length;
+  const compradores = dedupByEmail(people.filter((p) => p.virouCRT)).length;
   const naoCompradores = respondentes - compradores;
   const taxaConversao = respondentes > 0 ? (compradores / respondentes) * 100 : 0;
   const scoreMedia = scores.length > 0
@@ -207,8 +219,8 @@ export interface ProfileComparison {
 }
 
 export function getBuyerProfiles(people: Person[]): ProfileComparison[] {
-  const buyers = people.filter((p) => p.virouCRT);
-  const nonBuyers = people.filter((p) => p.respondeuPesquisa && !p.virouCRT);
+  const buyers = dedupByEmail(people.filter((p) => p.virouCRT));
+  const nonBuyers = dedupByEmail(people.filter((p) => p.respondeuPesquisa && !p.virouCRT));
 
   return SURVEY_FIELDS.map((field) => {
     const bDist = new Map<string, number>();

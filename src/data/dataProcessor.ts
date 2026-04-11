@@ -114,9 +114,16 @@ export function processData(data: SheetData) {
 // ---- Stats ----
 
 export function getGlobalStats(people: Person[]): GlobalStats {
-  const total = people.length;
-  const respondentes = people.filter(p => p.respondeuPesquisa).length;
-  const crt = people.filter(p => p.virouCRT).length;
+  const total = people.length; // email+tag — contagem operacional da turma
+  // Respondentes e CRT deduplicados por email — contagem de pessoas únicas
+  const seenResp = new Set<string>();
+  const seenCrt = new Set<string>();
+  for (const p of people) {
+    if (p.respondeuPesquisa) seenResp.add(p.email);
+    if (p.virouCRT) seenCrt.add(p.email);
+  }
+  const respondentes = seenResp.size;
+  const crt = seenCrt.size;
   return {
     total,
     respondentes,
@@ -168,8 +175,10 @@ export function getSurveyFields(): { key: SurveyFieldKey; label: string }[] {
 
 export function getSurveyDistribution(people: Person[], field: SurveyFieldKey) {
   const dist = new Map<string, { total: number; crt: number }>();
+  const seen = new Set<string>(); // deduplicate by email
   for (const p of people) {
-    if (!p.survey) continue;
+    if (!p.survey || seen.has(p.email)) continue;
+    seen.add(p.email);
     const val = p.survey[field] || "(vazio)";
     if (!dist.has(val)) dist.set(val, { total: 0, crt: 0 });
     const d = dist.get(val)!;
@@ -222,11 +231,19 @@ function normalizeDate(raw: string): { display: string; iso: string } | null {
 
 export function getDailyResponses(people: Person[]): DailyResponseStats {
   const dayMap = new Map<string, { display: string; count: number }>();
+  // Deduplicate by email per day — same person in multiple turmas counts once
+  const dayEmailSeen = new Map<string, Set<string>>();
 
   for (const p of people) {
     if (!p.survey || !p.survey.submittedAt) continue;
     const parsed = normalizeDate(p.survey.submittedAt);
     if (!parsed) continue;
+
+    if (!dayEmailSeen.has(parsed.iso)) dayEmailSeen.set(parsed.iso, new Set());
+    const seen = dayEmailSeen.get(parsed.iso)!;
+    if (seen.has(p.email)) continue;
+    seen.add(p.email);
+
     const existing = dayMap.get(parsed.iso);
     if (existing) {
       existing.count++;
@@ -258,9 +275,17 @@ export function getAreaDistribution(people: Person[]) {
     { key: "areaSaudeEmocional" as const, label: "Saúde Emocional" },
   ];
 
+  // Deduplicate by email
+  const seenEmail = new Set<string>();
+  const uniquePeople = people.filter((p) => {
+    if (!p.survey || seenEmail.has(p.email)) return false;
+    seenEmail.add(p.email);
+    return true;
+  });
+
   return areas.map(a => {
-    const total = people.filter(p => p.survey?.[a.key]).length;
-    const crt = people.filter(p => p.survey?.[a.key] && p.virouCRT).length;
+    const total = uniquePeople.filter(p => p.survey?.[a.key]).length;
+    const crt = uniquePeople.filter(p => p.survey?.[a.key] && p.virouCRT).length;
     return { value: a.label, total, crt };
   }).sort((a, b) => b.total - a.total);
 }
