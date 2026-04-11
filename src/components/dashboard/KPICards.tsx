@@ -73,7 +73,7 @@ const KPICards = (props: KPICardsProps) => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06, duration: 0.4, ease: "easeOut" }}
-            className="kpi-card"
+            className={`kpi-card ${i === kpis.length - 1 ? "col-span-2 md:col-span-1" : ""}`}
           >
             <div className="flex items-center justify-between mb-3">
               <div
