@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { type Person } from "@/data/dataProcessor";
 import { ChevronUp, ChevronDown, Check, X, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 interface DetailTableProps {
@@ -23,7 +22,8 @@ const DetailTable = ({ people }: DetailTableProps) => {
     return people.filter(
       (p) =>
         p.nome.toLowerCase().includes(q) ||
-        p.email.toLowerCase().includes(q)
+        p.email.toLowerCase().includes(q) ||
+        p.turma.toLowerCase().includes(q)
     );
   }, [people, tableSearch]);
 
@@ -63,12 +63,6 @@ const DetailTable = ({ people }: DetailTableProps) => {
     );
   };
 
-  const getStatus = (p: Person) => {
-    if (p.virouCRT) return "Na Comu RT";
-    if (p.respondeuPesquisa) return "Respondeu Pesquisa";
-    return "Somente Turma";
-  };
-
   const handleSearchChange = (v: string) => {
     setTableSearch(v);
     setPage(0);
@@ -77,7 +71,7 @@ const DetailTable = ({ people }: DetailTableProps) => {
   return (
     <div className="dashboard-card">
       {/* Header with search */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div>
           <h3 className="section-title">Tabela Analítica</h3>
           <p className="section-subtitle">
@@ -85,24 +79,22 @@ const DetailTable = ({ people }: DetailTableProps) => {
             {sorted.length.toLocaleString("pt-BR")} registros
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar nome ou email..."
-              value={tableSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 pr-8 h-9 w-[260px] text-sm bg-muted/50 border-border"
-            />
-            {tableSearch && (
-              <button
-                onClick={() => handleSearchChange("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Buscar nome, email ou tag..."
+            value={tableSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-9 pr-8 h-9 w-full sm:w-[280px] text-sm bg-muted/50 border-border"
+          />
+          {tableSearch && (
+            <button
+              onClick={() => handleSearchChange("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -114,7 +106,7 @@ const DetailTable = ({ people }: DetailTableProps) => {
                 [
                   ["nome", "Nome"],
                   ["email", "Email"],
-                  ["turma", "Turma"],
+                  ["turma", "Tag do Desafio"],
                 ] as [SortKey, string][]
               ).map(([key, label]) => (
                 <th
@@ -145,9 +137,6 @@ const DetailTable = ({ people }: DetailTableProps) => {
                   </div>
                 </th>
               ))}
-              <th className="text-center py-3 px-3 text-muted-foreground font-medium">
-                Status
-              </th>
               <th className="text-left py-3 px-3 text-muted-foreground font-medium">
                 Tag Comu RT
               </th>
@@ -168,8 +157,8 @@ const DetailTable = ({ people }: DetailTableProps) => {
                 <td className="py-2.5 px-3 text-muted-foreground font-mono text-xs max-w-[200px] truncate">
                   {p.email}
                 </td>
-                <td className="py-2.5 px-3 text-xs">
-                  {p.turma.replace("Desafio - ", "")}
+                <td className="py-2.5 px-3 text-xs text-muted-foreground font-mono">
+                  {p.turma}
                 </td>
                 <td className="py-2.5 px-3 text-center">
                   {p.respondeuPesquisa ? (
@@ -185,21 +174,7 @@ const DetailTable = ({ people }: DetailTableProps) => {
                     <X className="w-4 h-4 text-muted-foreground/30 mx-auto" />
                   )}
                 </td>
-                <td className="py-2.5 px-3 text-center">
-                  <Badge
-                    variant={
-                      p.virouCRT
-                        ? "default"
-                        : p.respondeuPesquisa
-                        ? "secondary"
-                        : "outline"
-                    }
-                    className="text-xs"
-                  >
-                    {getStatus(p)}
-                  </Badge>
-                </td>
-                <td className="py-2.5 px-3 text-xs text-muted-foreground truncate max-w-[180px]">
+                <td className="py-2.5 px-3 text-xs text-muted-foreground truncate max-w-[180px] font-mono">
                   {p.crtTag || "—"}
                 </td>
                 <td className="py-2.5 px-3 text-xs text-muted-foreground truncate max-w-[120px]">
