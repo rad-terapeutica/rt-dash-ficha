@@ -8,7 +8,8 @@ import DailyResponses from "@/components/dashboard/DailyResponses";
 import ThemePairs from "@/components/dashboard/ThemePairs";
 import DetailTable from "@/components/dashboard/DetailTable";
 import InsightsPanel from "@/components/dashboard/InsightsPanel";
-import { Loader2, AlertCircle } from "lucide-react";
+import Leadscore from "@/pages/Leadscore";
+import { Loader2, AlertCircle, LayoutDashboard, Crosshair } from "lucide-react";
 
 export interface CrossFilter {
   themeTitle: string;
@@ -25,8 +26,11 @@ const AREA_LABEL_TO_KEY: Record<string, string> = {
   "Saúde Emocional": "areaSaudeEmocional",
 };
 
+type TabKey = "visao-geral" | "leadscore";
+
 const Index = () => {
   const { people, rawSurveyCount, unmatchedSurveys, loading, error, refresh, lastUpdated } = useSheetData();
+  const [activeTab, setActiveTab] = useState<TabKey>("visao-geral");
   const [turmaFilter, setTurmaFilter] = useState("all");
   const [statusResposta, setStatusResposta] = useState("all");
   const [statusCRT, setStatusCRT] = useState("all");
@@ -137,39 +141,88 @@ const Index = () => {
           onRefresh={handleRefresh}
         />
 
-        <KPICards {...stats} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3">
-            <FunnelChart
-              total={stats.total}
-              respondentes={stats.respondentes}
-              crt={stats.crt}
-            />
-          </div>
-          <div className="lg:col-span-2">
-            <InsightsPanel people={filtered} />
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[hsl(225,20%,7%)] border border-border/50 w-fit">
+          <TabButton
+            active={activeTab === "visao-geral"}
+            onClick={() => setActiveTab("visao-geral")}
+            icon={<LayoutDashboard className="w-3.5 h-3.5" />}
+            label="Visão Geral"
+          />
+          <TabButton
+            active={activeTab === "leadscore"}
+            onClick={() => setActiveTab("leadscore")}
+            icon={<Crosshair className="w-3.5 h-3.5" />}
+            label="Leadscore"
+          />
         </div>
 
-        <DailyResponses
-          people={filtered}
-          turmaFilter={turmaFilter}
-          rawSurveyCount={rawSurveyCount}
-          identifiedCount={people.filter((p) => p.respondeuPesquisa).length}
-          unmatchedSurveys={unmatchedSurveys}
-        />
+        {/* Tab Content */}
+        {activeTab === "visao-geral" ? (
+          <>
+            <KPICards {...stats} />
 
-        <ThemePairs
-          people={filtered}
-          crossFilter={crossFilter}
-          onCrossFilter={handleCrossFilter}
-        />
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-3">
+                <FunnelChart
+                  total={stats.total}
+                  respondentes={stats.respondentes}
+                  crt={stats.crt}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <InsightsPanel people={filtered} />
+              </div>
+            </div>
 
-        <DetailTable people={filtered} />
+            <DailyResponses
+              people={filtered}
+              turmaFilter={turmaFilter}
+              rawSurveyCount={rawSurveyCount}
+              identifiedCount={people.filter((p) => p.respondeuPesquisa).length}
+              unmatchedSurveys={unmatchedSurveys}
+            />
+
+            <ThemePairs
+              people={filtered}
+              crossFilter={crossFilter}
+              onCrossFilter={handleCrossFilter}
+            />
+
+            <DetailTable people={filtered} />
+          </>
+        ) : (
+          <Leadscore people={filtered} />
+        )}
       </main>
     </div>
   );
 };
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+        active
+          ? "bg-primary/15 text-primary shadow-sm"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
 
 export default Index;
