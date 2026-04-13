@@ -5,29 +5,29 @@ import type { LeadscoreKPIs as KPIData } from "@/data/leadscoreProcessor";
 const LeadscoreKPICards = ({ data }: { data: KPIData }) => {
   const cards = [
     {
-      label: "Respondentes na Base",
-      desc: "Leads que preencheram a ficha e estão na base da turma",
+      label: "Respondentes Analisados",
+      desc: "Leads da turma que preencheram a ficha de interesse",
       value: data.respondentes.toLocaleString("pt-BR"),
       icon: Users,
       color: "hsl(210 100% 62%)",
     },
     {
-      label: "Compradores Comu RT",
-      desc: "Respondentes que compraram a Comunidade RT",
+      label: "Compradores c/ Pesquisa",
+      desc: "Compradores da Comu RT que também responderam a ficha",
       value: data.compradores.toLocaleString("pt-BR"),
       icon: ShoppingCart,
       color: "hsl(165 70% 46%)",
     },
     {
-      label: "Taxa de Conversão",
-      desc: "Percentual dos respondentes que compraram",
+      label: "Conversão na Base Pesquisada",
+      desc: "% dos respondentes da ficha que compraram a Comu RT",
       value: `${data.taxaConversao.toFixed(1)}%`,
       icon: TrendingUp,
       color: "hsl(var(--primary))",
     },
     {
-      label: "Score Médio da Base",
-      desc: "Propensão média de compra observada na ficha",
+      label: "Score Médio",
+      desc: "Propensão média de compra observada entre os respondentes",
       value: data.scoreMedia.toFixed(0),
       icon: Gauge,
       color: "hsl(38 95% 55%)",

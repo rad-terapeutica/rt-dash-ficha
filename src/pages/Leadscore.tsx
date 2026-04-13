@@ -34,23 +34,24 @@ function MethodologyCards({
       body: (
         <>
           <p>
-            Comparamos as respostas de{" "}
-            <span className="text-foreground font-semibold">
-              {compradores.toLocaleString("pt-BR")} compradores
-            </span>{" "}
-            da Comu RT com{" "}
-            <span className="text-foreground font-semibold">
-              {naoCompradores.toLocaleString("pt-BR")} não compradores
-            </span>
-            , dentro de um universo de{" "}
+            Esta análise usa apenas os leads que preencheram a ficha de
+            interesse. Dentro desse universo de{" "}
             <span className="text-foreground font-semibold">
               {respondentes.toLocaleString("pt-BR")} respondentes
+            </span>
+            , comparamos{" "}
+            <span className="text-foreground font-semibold">
+              {compradores.toLocaleString("pt-BR")} que compraram a Comu RT
             </span>{" "}
-            identificados na base da turma.
+            com{" "}
+            <span className="text-foreground font-semibold">
+              {naoCompradores.toLocaleString("pt-BR")} que não compraram
+            </span>
+            .
           </p>
           <p className="mt-2">
-            A análise usa apenas leads que preencheram a ficha de interesse e
-            estão na base do Desafio.
+            Os números aqui refletem o subconjunto analisável (com pesquisa),
+            não o total de compradores da turma.
           </p>
         </>
       ),
