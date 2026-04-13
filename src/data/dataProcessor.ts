@@ -10,7 +10,7 @@ export interface Person {
   turmaTag: string;
   crtTag: string | null;
   respondeuPesquisa: boolean;
-  virouCRT: boolean; // only true if respondeuPesquisa AND in CRT list
+  virouCRT: boolean; // true if email found in CRT list (independent of survey)
   survey: SurveyRow | null;
 }
 
@@ -28,6 +28,7 @@ export interface GlobalStats {
   total: number;
   respondentes: number;
   crt: number;
+  crtComPesquisa: number;
   pctRespondentes: number;
   pctCrtRespondentes: number;
   pctCrtTotal: number;
@@ -38,8 +39,9 @@ export interface GlobalStats {
 // LOGIC (definitive):
 // 1. Base = desafio_turma (all leads by turma)
 // 2. Cross desafio_turma × pesquisa by email → respondeuPesquisa
-// 3. Among respondents, cross with Desafio_crt by email → virouCRT
-// 4. desafio_compra_aprvada is COMPLETELY IGNORED
+// 3. Cross desafio_turma × Desafio_crt by email → virouCRT (independent of survey)
+// 4. crtComPesquisa = virouCRT AND respondeuPesquisa (complementary metric)
+// 5. desafio_compra_aprvada is COMPLETELY IGNORED
 
 export interface UnmatchedSurvey {
   email: string;
@@ -82,8 +84,8 @@ export function processData(data: SheetData) {
     const survey = surveyByEmail.get(t.email) || null;
     const respondeuPesquisa = survey != null;
 
-    // Step 3: ONLY if they responded, check if they're in CRT
-    const crtTag = respondeuPesquisa ? (crtEmails.get(t.email) || null) : null;
+    // Step 3: Check if they're in CRT (independent of survey response)
+    const crtTag = crtEmails.get(t.email) || null;
     const virouCRT = crtTag != null;
 
     people.push({
@@ -118,16 +120,20 @@ export function getGlobalStats(people: Person[]): GlobalStats {
   // Respondentes e CRT deduplicados por email — contagem de pessoas únicas
   const seenResp = new Set<string>();
   const seenCrt = new Set<string>();
+  const seenCrtResp = new Set<string>();
   for (const p of people) {
     if (p.respondeuPesquisa) seenResp.add(p.email);
     if (p.virouCRT) seenCrt.add(p.email);
+    if (p.virouCRT && p.respondeuPesquisa) seenCrtResp.add(p.email);
   }
   const respondentes = seenResp.size;
   const crt = seenCrt.size;
+  const crtComPesquisa = seenCrtResp.size;
   return {
     total,
     respondentes,
     crt,
+    crtComPesquisa,
     pctRespondentes: total > 0 ? (respondentes / total) * 100 : 0,
     pctCrtRespondentes: respondentes > 0 ? (crt / respondentes) * 100 : 0,
     pctCrtTotal: total > 0 ? (crt / total) * 100 : 0,

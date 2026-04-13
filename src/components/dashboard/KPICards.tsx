@@ -5,6 +5,7 @@ interface KPICardsProps {
   total: number;
   respondentes: number;
   crt: number;
+  crtComPesquisa: number;
   pctRespondentes: number;
   pctCrtRespondentes: number;
   pctCrtTotal: number;
@@ -43,7 +44,7 @@ const kpis: Array<{
   {
     key: "crt",
     label: "Na Comu RT",
-    desc: "Contatos que avançaram para a Comunidade RT",
+    desc: "Total de contatos com tag CRT desta turma",
     icon: Award,
     color: "hsl(var(--chart-4))",
   },
@@ -86,6 +87,11 @@ const KPICards = (props: KPICardsProps) => {
             <div className="stat-value" style={{ color: kpi.color }}>
               {formatted}
             </div>
+            {kpi.key === "crt" && (
+              <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                {props.crtComPesquisa.toLocaleString("pt-BR")} com pesquisa
+              </div>
+            )}
             <div className="stat-label mt-1">{kpi.label}</div>
             <div className="text-[11px] text-muted-foreground/60 mt-0.5 leading-tight">
               {kpi.desc}

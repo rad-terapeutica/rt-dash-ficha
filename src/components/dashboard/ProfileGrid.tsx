@@ -67,7 +67,7 @@ const blocks: BlockConfig[] = [
 const ProfileGrid = ({ people }: ProfileGridProps) => {
   const [onlyRT, setOnlyRT] = useState(false);
   const filtered = onlyRT
-    ? people.filter((p) => p.virouCRT)
+    ? people.filter((p) => p.virouCRT && p.respondeuPesquisa)
     : people.filter((p) => p.respondeuPesquisa);
 
   return (

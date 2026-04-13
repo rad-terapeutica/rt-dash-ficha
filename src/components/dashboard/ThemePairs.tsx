@@ -78,10 +78,10 @@ const themes: ThemeConfig[] = [
 const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => {
   const [onlyRT, setOnlyRT] = useState(false);
   const profileFiltered = onlyRT
-    ? people.filter((p) => p.virouCRT)
+    ? people.filter((p) => p.virouCRT && p.respondeuPesquisa)
     : people.filter((p) => p.respondeuPesquisa);
   const respondentes = people.filter((p) => p.respondeuPesquisa);
-  const rtPeople = people.filter((p) => p.virouCRT);
+  const rtPeople = people.filter((p) => p.virouCRT && p.respondeuPesquisa);
 
   const handleSliceClick = useCallback(
     (theme: ThemeConfig, value: string) => {

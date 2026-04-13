@@ -46,7 +46,7 @@ const InsightsPanel = ({ people }: InsightsPanelProps) => {
   const seenBuyer = new Set<string>();
   const seenNon = new Set<string>();
   const buyers = people.filter((p) => {
-    if (!p.virouCRT || seenBuyer.has(p.email)) return false;
+    if (!p.virouCRT || !p.respondeuPesquisa || seenBuyer.has(p.email)) return false;
     seenBuyer.add(p.email);
     return true;
   });

@@ -34,7 +34,7 @@ const fieldMeta: Record<string, { title: string; desc: string }> = {
 
 const RespondentesVsCRT = ({ people }: RespondentesVsCRTProps) => {
   const respondentes = people.filter((p) => p.respondeuPesquisa);
-  const rtPeople = people.filter((p) => p.virouCRT);
+  const rtPeople = people.filter((p) => p.virouCRT && p.respondeuPesquisa);
   const fields = getSurveyFields();
 
   return (

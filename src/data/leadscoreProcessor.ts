@@ -84,7 +84,8 @@ function dedupByEmail(list: Person[]): Person[] {
 // ---- Signal computation ----
 
 export function computeSignals(people: Person[]): Signal[] {
-  const buyers = dedupByEmail(people.filter((p) => p.virouCRT));
+  // Leadscore requires survey data — only consider CRT buyers who also responded
+  const buyers = dedupByEmail(people.filter((p) => p.virouCRT && p.respondeuPesquisa));
   const nonBuyers = dedupByEmail(people.filter((p) => p.respondeuPesquisa && !p.virouCRT));
   const totalBuyers = buyers.length;
   const totalNonBuyers = nonBuyers.length;
@@ -196,7 +197,8 @@ export function computeScores(people: Person[], signals: Signal[]): PersonScore[
 
 export function getLeadscoreKPIs(people: Person[], scores: PersonScore[]): LeadscoreKPIs {
   const respondentes = dedupByEmail(people.filter((p) => p.respondeuPesquisa)).length;
-  const compradores = dedupByEmail(people.filter((p) => p.virouCRT)).length;
+  // Leadscore compares only CRT buyers who responded (have survey data)
+  const compradores = dedupByEmail(people.filter((p) => p.virouCRT && p.respondeuPesquisa)).length;
   const naoCompradores = respondentes - compradores;
   const taxaConversao = respondentes > 0 ? (compradores / respondentes) * 100 : 0;
   const scoreMedia = scores.length > 0
@@ -219,7 +221,8 @@ export interface ProfileComparison {
 }
 
 export function getBuyerProfiles(people: Person[]): ProfileComparison[] {
-  const buyers = dedupByEmail(people.filter((p) => p.virouCRT));
+  // Buyer profiles require survey data — only CRT buyers who responded
+  const buyers = dedupByEmail(people.filter((p) => p.virouCRT && p.respondeuPesquisa));
   const nonBuyers = dedupByEmail(people.filter((p) => p.respondeuPesquisa && !p.virouCRT));
 
   return SURVEY_FIELDS.map((field) => {

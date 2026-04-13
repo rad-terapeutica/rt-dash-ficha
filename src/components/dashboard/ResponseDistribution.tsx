@@ -20,7 +20,7 @@ interface ResponseDistributionProps {
 
 const ResponseDistribution = ({ people }: ResponseDistributionProps) => {
   const [onlyCRT, setOnlyCRT] = useState(false);
-  const filtered = onlyCRT ? people.filter(p => p.virouCRT) : people.filter(p => p.respondeuPesquisa);
+  const filtered = onlyCRT ? people.filter(p => p.virouCRT && p.respondeuPesquisa) : people.filter(p => p.respondeuPesquisa);
   const fields = getSurveyFields();
 
   return (

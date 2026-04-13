@@ -1,28 +1,29 @@
 import { motion } from "framer-motion";
-import { ArrowDown, Users, FileCheck, Award } from "lucide-react";
+import { ArrowDown, Users, FileCheck, Award, UserCheck } from "lucide-react";
 
 interface FunnelChartProps {
   total: number;
   respondentes: number;
   crt: number;
+  crtComPesquisa: number;
 }
 
-const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
+const FunnelChart = ({ total, respondentes, crt, crtComPesquisa }: FunnelChartProps) => {
   const stages = [
-    { label: "Base da Turma", value: total, icon: Users, color: "hsl(var(--chart-2))", pct: 100 },
-    { label: "Responderam a Pesquisa", value: respondentes, icon: FileCheck, color: "hsl(var(--chart-3))", pct: total > 0 ? (respondentes / total) * 100 : 0 },
-    { label: "Na Comu RT", value: crt, icon: Award, color: "hsl(var(--chart-4))", pct: total > 0 ? (crt / total) * 100 : 0 },
+    { label: "Base da Turma", value: total, icon: Users, color: "hsl(var(--chart-2))", pct: 100, sub: null },
+    { label: "Responderam a Pesquisa", value: respondentes, icon: FileCheck, color: "hsl(var(--chart-3))", pct: total > 0 ? (respondentes / total) * 100 : 0, sub: null },
+    { label: "Na Comu RT", value: crt, icon: Award, color: "hsl(var(--chart-4))", pct: total > 0 ? (crt / total) * 100 : 0, sub: `${crtComPesquisa.toLocaleString("pt-BR")} com pesquisa` },
   ];
 
   const drops = [
     { from: total, to: respondentes },
-    { from: respondentes, to: crt },
+    { from: total, to: crt },
   ];
 
   return (
     <div className="dashboard-card h-full">
       <h3 className="section-title mb-1">Funil da Turma</h3>
-      <p className="section-subtitle mb-6">Jornada completa: da base total até a Comu RT</p>
+      <p className="section-subtitle mb-6">Base total, adesão à pesquisa e conversão para Comu RT</p>
 
       <div className="flex flex-col items-center gap-2">
         {stages.map((stage, i) => {
@@ -45,7 +46,12 @@ const FunnelChart = ({ total, respondentes, crt }: FunnelChartProps) => {
               >
                 <div className="flex items-center gap-3">
                   <Icon className="w-5 h-5 text-primary-foreground" />
-                  <span className="font-semibold text-primary-foreground text-sm">{stage.label}</span>
+                  <div>
+                    <span className="font-semibold text-primary-foreground text-sm">{stage.label}</span>
+                    {stage.sub && (
+                      <div className="text-[11px] text-primary-foreground/60 leading-tight">{stage.sub}</div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-primary-foreground text-lg">{stage.value.toLocaleString("pt-BR")}</span>

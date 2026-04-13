@@ -168,6 +168,7 @@ const Index = () => {
                   total={stats.total}
                   respondentes={stats.respondentes}
                   crt={stats.crt}
+                  crtComPesquisa={stats.crtComPesquisa}
                 />
               </div>
               <div className="lg:col-span-2">
