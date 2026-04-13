@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useSheetData } from "@/hooks/useSheetData";
-import { getGlobalStats, getTurmaList } from "@/data/dataProcessor";
+import { getGlobalStats, getDirectCRTStats, getTurmaList } from "@/data/dataProcessor";
 import FilterBar from "@/components/dashboard/FilterBar";
 import KPICards from "@/components/dashboard/KPICards";
 import FunnelChart from "@/components/dashboard/FunnelChart";
@@ -29,7 +29,7 @@ const AREA_LABEL_TO_KEY: Record<string, string> = {
 type TabKey = "visao-geral" | "leadscore";
 
 const Index = () => {
-  const { people, rawSurveyCount, unmatchedSurveys, loading, error, refresh, lastUpdated } = useSheetData();
+  const { people, rawSurveyCount, unmatchedSurveys, crtRows, surveyEmails, loading, error, refresh, lastUpdated } = useSheetData();
   const [activeTab, setActiveTab] = useState<TabKey>("visao-geral");
   const [turmaFilter, setTurmaFilter] = useState("all");
   const [statusResposta, setStatusResposta] = useState("all");
@@ -65,6 +65,10 @@ const Index = () => {
   }, [baseFiltered, crossFilter]);
 
   const stats = useMemo(() => getGlobalStats(filtered), [filtered]);
+  const directCRT = useMemo(
+    () => getDirectCRTStats(crtRows, surveyEmails, turmaFilter),
+    [crtRows, surveyEmails, turmaFilter]
+  );
 
   const handleCrossFilter = useCallback((filter: CrossFilter | null) => {
     setCrossFilter((prev) => {
@@ -160,15 +164,20 @@ const Index = () => {
         {/* Tab Content */}
         {activeTab === "visao-geral" ? (
           <>
-            <KPICards {...stats} />
+            <KPICards
+              {...stats}
+              crt={directCRT.crtTotal}
+              crtComPesquisa={directCRT.crtComPesquisa}
+              pctCrtTotal={stats.total > 0 ? (directCRT.crtTotal / stats.total) * 100 : 0}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
               <div className="lg:col-span-3">
                 <FunnelChart
                   total={stats.total}
                   respondentes={stats.respondentes}
-                  crt={stats.crt}
-                  crtComPesquisa={stats.crtComPesquisa}
+                  crt={directCRT.crtTotal}
+                  crtComPesquisa={directCRT.crtComPesquisa}
                 />
               </div>
               <div className="lg:col-span-2">

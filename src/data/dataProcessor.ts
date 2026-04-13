@@ -1,4 +1,4 @@
-import type { SheetData, SurveyRow } from "@/services/googleSheets";
+import type { SheetData, SurveyRow, LeadRow } from "@/services/googleSheets";
 
 // ---- Types ----
 
@@ -35,12 +35,14 @@ export interface GlobalStats {
 }
 
 // ---- Processing ----
-// 
+//
 // LOGIC (definitive):
 // 1. Base = desafio_turma (all leads by turma)
 // 2. Cross desafio_turma × pesquisa by email → respondeuPesquisa
 // 3. Cross desafio_turma × Desafio_crt by email → virouCRT (independent of survey)
-// 4. crtComPesquisa = virouCRT AND respondeuPesquisa (complementary metric)
+// 4. KPI "Na Comu RT" = total real da tag CRT direto da fonte (Desafio_crt)
+//    - NÃO depende de o email existir em desafio_turma
+//    - complementar: crtComPesquisa = CRT ∩ pesquisa
 // 5. desafio_compra_aprvada is COMPLETELY IGNORED
 
 export interface UnmatchedSurvey {
@@ -110,7 +112,49 @@ export function processData(data: SheetData) {
       submittedAt: s.submittedAt,
     }));
 
-  return { people, rawSurveyCount: data.survey.length, unmatchedSurveys };
+  return {
+    people,
+    rawSurveyCount: data.survey.length,
+    unmatchedSurveys,
+    crtRows: data.crt,
+    surveyEmails: new Set(data.survey.filter(s => s.email).map(s => s.email)),
+  };
+}
+
+// ---- Direct CRT stats (from source, not filtered by desafio_turma) ----
+
+export interface DirectCRTStats {
+  crtTotal: number;        // unique emails from CRT tag (= ActiveCampaign)
+  crtComPesquisa: number;  // CRT emails that also responded to survey
+}
+
+export function getDirectCRTStats(
+  crtRows: LeadRow[],
+  surveyEmails: Set<string>,
+  turmaFilter: string
+): DirectCRTStats {
+  let rows = crtRows;
+  if (turmaFilter !== "all") {
+    // Extract date from turma tag (e.g. "Desafio - 23/02/26" → "23/02/26")
+    const dateMatch = turmaFilter.match(/(\d{2}\/\d{2}\/\d{2,4})$/);
+    if (dateMatch) {
+      const datePart = dateMatch[1];
+      rows = crtRows.filter(c => c.tag.includes(datePart));
+    }
+  }
+
+  const uniqueEmails = new Set<string>();
+  const uniqueWithSurvey = new Set<string>();
+  for (const c of rows) {
+    if (!c.email) continue;
+    uniqueEmails.add(c.email);
+    if (surveyEmails.has(c.email)) uniqueWithSurvey.add(c.email);
+  }
+
+  return {
+    crtTotal: uniqueEmails.size,
+    crtComPesquisa: uniqueWithSurvey.size,
+  };
 }
 
 // ---- Stats ----
