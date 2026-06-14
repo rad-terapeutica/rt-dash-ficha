@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Segredos / credenciais — NUNCA versionar
+.env
+.env.*
+*.env
+!.env.example
+
+# Workflows n8n (contêm credenciais: service_role, token AC, Postgres)
+n8n/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

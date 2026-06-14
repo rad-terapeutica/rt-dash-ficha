@@ -8,8 +8,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { getDailyResponses, type Person, type UnmatchedSurvey } from "@/data/dataProcessor";
-import { CalendarDays, TrendingUp, Trophy, Hash, Filter, FileSpreadsheet, UserCheck, AlertTriangle, Search, X, ExternalLink } from "lucide-react";
+import type { UnmatchedSurvey } from "@/data/dataProcessor";
+import { CalendarDays, TrendingUp, Trophy, Hash, Filter, FileSpreadsheet, UserCheck, AlertTriangle, Search, X, ExternalLink, Users, FileCheck, UserX } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,15 +17,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface DailyResponsesProps {
-  people: Person[];
-  turmaFilter: string;
-  rawSurveyCount: number;
-  identifiedCount: number;
-  unmatchedSurveys: UnmatchedSurvey[];
+// Ponto único de dado diário (banco): dia já formatado + contagem.
+export interface DailyPoint {
+  date: string; // dd/mm/yyyy
+  dateISO: string; // yyyy-mm-dd
+  count: number;
 }
 
-/* ─── Audit Modal ─── */
+// Cobertura: reage à turma. Em "todas", vira indicadores globais de qualidade.
+export type CoverageData =
+  | { mode: "turma"; totalLeads: number; responderam: number; naoResponderam: number; pctResposta: number }
+  | { mode: "global"; totalRespostasFicha: number; identificados: number; foraDaBase: number };
+
+interface DailyResponsesProps {
+  daily: DailyPoint[];
+  turmaFilter: string;
+  coverage: CoverageData;
+  unmatchedSurveys: UnmatchedSurvey[]; // PII — permanece em sheets (auditoria)
+}
+
+/* ─── Audit Modal (lista de emails órfãos — fonte sheets, PII) ─── */
 
 function AuditModal({
   open,
@@ -49,7 +60,6 @@ function AuditModal({
     );
   }, [unmatchedSurveys, search]);
 
-  // Group by date for display
   const grouped = useMemo(() => {
     const map = new Map<string, UnmatchedSurvey[]>();
     for (const s of filtered) {
@@ -69,12 +79,11 @@ function AuditModal({
             Auditoria — Respostas Fora da Base
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            {unmatchedSurveys.length} respostas da ficha cujo email não foi encontrado na base da turma.
+            {unmatchedSurveys.length} respostas da ficha cujo email não foi encontrado em nenhuma tag do AC.
             Estes registros não entram no recorte da dashboard.
           </p>
         </DialogHeader>
 
-        {/* Search */}
         <div className="relative mt-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
@@ -98,7 +107,6 @@ function AuditModal({
           Exibindo {filtered.length} de {unmatchedSurveys.length} registros
         </div>
 
-        {/* List */}
         <div className="flex-1 overflow-y-auto mt-3 space-y-4 pr-1">
           {grouped.map(([date, items]) => (
             <div key={date}>
@@ -145,7 +153,7 @@ function AuditModal({
 
         <div className="pt-3 mt-2 border-t border-border/30">
           <p className="text-[10px] text-muted-foreground/40 text-center leading-relaxed">
-            A dashboard exibe o recorte identificado na base da turma.
+            A dashboard exibe o recorte identificado na base do AC.
             Respostas fora da base permanecem auditáveis neste painel.
           </p>
         </div>
@@ -154,128 +162,142 @@ function AuditModal({
   );
 }
 
-/* ─── Coverage Bar ─── */
+/* ─── Coverage Bar (reage à turma) ─── */
+
+const StatCell = ({
+  icon: Icon,
+  color,
+  label,
+  value,
+  sub,
+  onClick,
+}: {
+  icon: typeof Users;
+  color: string;
+  label: string;
+  value: number;
+  sub?: React.ReactNode;
+  onClick?: () => void;
+}) => {
+  const inner = (
+    <>
+      <div className="flex items-center justify-center gap-1.5 mb-1.5">
+        <Icon className="w-3.5 h-3.5" style={{ color }} />
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+      <div className="text-xl font-extrabold tracking-tight" style={{ color }}>
+        {value.toLocaleString("pt-BR")}
+      </div>
+      {sub}
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="text-center group cursor-pointer rounded-lg p-1 -m-1 transition-all hover:bg-[hsl(38,95%,55%/0.06)] hover:ring-1 hover:ring-[hsl(38,95%,55%/0.2)]"
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <div className="text-center">{inner}</div>;
+};
 
 const CoverageBar = ({
-  rawSurveyCount,
-  identifiedCount,
+  coverage,
   unmatchedSurveys,
 }: {
-  rawSurveyCount: number;
-  identifiedCount: number;
+  coverage: CoverageData;
   unmatchedSurveys: UnmatchedSurvey[];
 }) => {
   const [auditOpen, setAuditOpen] = useState(false);
-  const gap = rawSurveyCount - identifiedCount;
-  const gapPct = rawSurveyCount > 0 ? (gap / rawSurveyCount) * 100 : 0;
+
+  if (coverage.mode === "turma") {
+    const { totalLeads, responderam, naoResponderam, pctResposta } = coverage;
+    return (
+      <div className="rounded-xl border border-border/60 bg-[hsl(225,20%,7%)] p-4 mb-5">
+        <div className="grid grid-cols-3 gap-3">
+          <StatCell icon={Users} color="hsl(220 10% 70%)" label="Total de Leads" value={totalLeads} />
+          <StatCell icon={FileCheck} color="hsl(165 70% 46%)" label="Responderam" value={responderam} />
+          <StatCell icon={UserX} color="hsl(38 95% 55%)" label="Não Responderam" value={naoResponderam} />
+        </div>
+        <div className="mt-3 h-2 bg-[hsl(225,15%,12%)] rounded-full overflow-hidden flex">
+          <div
+            className="h-full rounded-l-full transition-all duration-700"
+            style={{ width: `${pctResposta}%`, backgroundColor: "hsl(165 70% 46%)" }}
+          />
+          <div
+            className="h-full rounded-r-full transition-all duration-700"
+            style={{ width: `${100 - pctResposta}%`, backgroundColor: "hsl(38 95% 55% / 0.5)" }}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground/50 mt-2 text-center leading-relaxed">
+          Cobertura da turma · {pctResposta.toFixed(1)}% dos leads responderam a ficha
+        </p>
+      </div>
+    );
+  }
+
+  // mode global
+  const { totalRespostasFicha, identificados, foraDaBase } = coverage;
+  const baseDistinta = identificados + foraDaBase;
+  const idPct = baseDistinta > 0 ? (identificados / baseDistinta) * 100 : 0;
+  const foraPct = baseDistinta > 0 ? (foraDaBase / baseDistinta) * 100 : 0;
 
   return (
     <>
       <div className="rounded-xl border border-border/60 bg-[hsl(225,20%,7%)] p-4 mb-5">
         <div className="grid grid-cols-3 gap-3">
-          {/* Total na Ficha */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1.5">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-foreground/50" />
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Total na Ficha
-              </span>
-            </div>
-            <div className="text-xl font-extrabold tracking-tight text-foreground">
-              {rawSurveyCount.toLocaleString("pt-BR")}
-            </div>
-          </div>
-
-          {/* Identificados na Base */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1.5">
-              <UserCheck className="w-3.5 h-3.5 text-[hsl(165,70%,46%)]" />
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Identificados
-              </span>
-            </div>
-            <div className="text-xl font-extrabold tracking-tight text-[hsl(165,70%,46%)]">
-              {identifiedCount.toLocaleString("pt-BR")}
-            </div>
-          </div>
-
-          {/* Gap — clicável */}
-          <button
+          <StatCell icon={FileSpreadsheet} color="hsl(220 10% 70%)" label="Total de respostas da ficha" value={totalRespostasFicha} />
+          <StatCell icon={UserCheck} color="hsl(165 70% 46%)" label="Identificados na base" value={identificados} />
+          <StatCell
+            icon={AlertTriangle}
+            color="hsl(38 95% 55%)"
+            label="Respostas fora da base"
+            value={foraDaBase}
             onClick={() => setAuditOpen(true)}
-            className="text-center group cursor-pointer rounded-lg p-1 -m-1 transition-all hover:bg-[hsl(38,95%,55%/0.06)] hover:ring-1 hover:ring-[hsl(38,95%,55%/0.2)]"
-          >
-            <div className="flex items-center justify-center gap-1.5 mb-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-[hsl(38,95%,55%)]" />
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Fora da Base
-              </span>
-            </div>
-            <div className="text-xl font-extrabold tracking-tight text-[hsl(38,95%,55%)]">
-              {gap.toLocaleString("pt-BR")}
-            </div>
-            <div className="flex items-center justify-center gap-1 mt-0.5">
-              <span className="text-[10px] font-mono text-muted-foreground/60">
-                {gapPct.toFixed(1)}%
-              </span>
-              <ExternalLink className="w-2.5 h-2.5 text-muted-foreground/40 group-hover:text-[hsl(38,95%,55%)] transition-colors" />
-            </div>
-          </button>
+            sub={
+              <div className="flex items-center justify-center gap-1 mt-0.5">
+                <span className="text-[10px] font-mono text-muted-foreground/60">{foraPct.toFixed(1)}%</span>
+                <ExternalLink className="w-2.5 h-2.5 text-muted-foreground/40 group-hover:text-[hsl(38,95%,55%)] transition-colors" />
+              </div>
+            }
+          />
         </div>
-
-        {/* Progress bar */}
         <div className="mt-3 h-2 bg-[hsl(225,15%,12%)] rounded-full overflow-hidden flex">
-          <div
-            className="h-full rounded-l-full transition-all duration-700"
-            style={{
-              width: `${rawSurveyCount > 0 ? (identifiedCount / rawSurveyCount) * 100 : 0}%`,
-              backgroundColor: "hsl(165 70% 46%)",
-            }}
-          />
-          <div
-            className="h-full rounded-r-full transition-all duration-700"
-            style={{
-              width: `${gapPct}%`,
-              backgroundColor: "hsl(38 95% 55% / 0.5)",
-            }}
-          />
+          <div className="h-full rounded-l-full transition-all duration-700" style={{ width: `${idPct}%`, backgroundColor: "hsl(165 70% 46%)" }} />
+          <div className="h-full rounded-r-full transition-all duration-700" style={{ width: `${foraPct}%`, backgroundColor: "hsl(38 95% 55% / 0.5)" }} />
         </div>
-
         <p className="text-[10px] text-muted-foreground/50 mt-2 text-center leading-relaxed">
-          A dashboard exibe o recorte identificado na base da turma · Clique em <span className="text-[hsl(38,95%,55%)]/60">Fora da Base</span> para auditar
+          Visão geral · clique em <span className="text-[hsl(38,95%,55%)]/60">Respostas fora da base</span> para auditar
         </p>
       </div>
 
-      <AuditModal
-        open={auditOpen}
-        onClose={() => setAuditOpen(false)}
-        unmatchedSurveys={unmatchedSurveys}
-      />
+      <AuditModal open={auditOpen} onClose={() => setAuditOpen(false)} unmatchedSurveys={unmatchedSurveys} />
     </>
   );
 };
 
 /* ─── Main Component ─── */
 
-const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, unmatchedSurveys }: DailyResponsesProps) => {
-  const { daily, total, bestDay, avgPerDay } = useMemo(
-    () => getDailyResponses(people),
-    [people]
-  );
+const DailyResponses = ({ daily, turmaFilter, coverage, unmatchedSurveys }: DailyResponsesProps) => {
+  const { total, bestDay, avgPerDay } = useMemo(() => {
+    const total = daily.reduce((s, d) => s + d.count, 0);
+    const bestDay = daily.length > 0 ? daily.reduce((b, d) => (d.count > b.count ? d : b)) : null;
+    const avgPerDay = daily.length > 0 ? total / daily.length : 0;
+    return { total, bestDay, avgPerDay };
+  }, [daily]);
 
   const chartData = useMemo(
-    () =>
-      daily.map((d) => ({
-        label: d.date.substring(0, 5),
-        full: d.date,
-        count: d.count,
-      })),
+    () => daily.map((d) => ({ label: d.date.substring(0, 5), full: d.date, count: d.count })),
     [daily]
   );
 
   const isTurmaSelected = turmaFilter !== "all";
-  const turmaLabel = isTurmaSelected
-    ? turmaFilter.replace("Desafio - ", "")
-    : null;
+  const turmaLabel = isTurmaSelected ? turmaFilter.replace("Desafio - ", "") : null;
 
   if (!isTurmaSelected) {
     return (
@@ -292,16 +314,14 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
           </div>
         </div>
 
-        <CoverageBar rawSurveyCount={rawSurveyCount} identifiedCount={identifiedCount} unmatchedSurveys={unmatchedSurveys} />
+        <CoverageBar coverage={coverage} unmatchedSurveys={unmatchedSurveys} />
 
         <div className="flex items-center justify-center gap-4 py-6">
           <div className="p-3 rounded-xl bg-[hsl(210,100%,62%/0.06)] border border-[hsl(210,100%,62%/0.1)]">
             <CalendarDays className="w-6 h-6 text-[hsl(210,100%,62%/0.4)]" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground/70">
-              Nenhuma turma selecionada
-            </p>
+            <p className="text-sm font-medium text-foreground/70">Nenhuma turma selecionada</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               Escolha uma turma no filtro para ver a evolução diária das respostas
             </p>
@@ -321,28 +341,23 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
           <div>
             <h3 className="section-title">Respostas por Dia</h3>
             <p className="section-subtitle">
-              Ritmo diário de preenchimento da ficha de interesse na turma selecionada
+              Ritmo diário de entrada na ficha (1ª resposta por pessoa) na turma selecionada
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[hsl(210,100%,62%/0.25)] bg-[hsl(210,100%,62%/0.08)]">
           <Filter className="w-3.5 h-3.5 text-[hsl(210,100%,62%)]" />
-          <span className="text-xs font-semibold text-[hsl(210,100%,62%)]">
-            {turmaLabel}
-          </span>
+          <span className="text-xs font-semibold text-[hsl(210,100%,62%)]">{turmaLabel}</span>
         </div>
       </div>
 
-      <CoverageBar rawSurveyCount={rawSurveyCount} identifiedCount={identifiedCount} unmatchedSurveys={unmatchedSurveys} />
+      <CoverageBar coverage={coverage} unmatchedSurveys={unmatchedSurveys} />
 
-      {/* Mini KPIs */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="rounded-lg border border-border bg-[hsl(225,20%,8%)] px-4 py-3">
           <div className="flex items-center gap-2 mb-1.5">
             <Hash className="w-3.5 h-3.5 text-[hsl(210,100%,62%)]" />
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Respostas da turma
-            </span>
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Respostas da turma</span>
           </div>
           <div className="text-2xl font-extrabold tracking-tight text-[hsl(210,100%,62%)]">
             {total.toLocaleString("pt-BR")}
@@ -352,9 +367,7 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
         <div className="rounded-lg border border-border bg-[hsl(225,20%,8%)] px-4 py-3">
           <div className="flex items-center gap-2 mb-1.5">
             <Trophy className="w-3.5 h-3.5 text-[hsl(38,95%,55%)]" />
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Melhor dia
-            </span>
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Melhor dia</span>
           </div>
           <div className="text-2xl font-extrabold tracking-tight text-[hsl(38,95%,55%)]">
             {bestDay ? bestDay.count.toLocaleString("pt-BR") : "—"}
@@ -367,9 +380,7 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
         <div className="rounded-lg border border-border bg-[hsl(225,20%,8%)] px-4 py-3">
           <div className="flex items-center gap-2 mb-1.5">
             <TrendingUp className="w-3.5 h-3.5 text-[hsl(165,70%,46%)]" />
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Media/dia
-            </span>
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Media/dia</span>
           </div>
           <div className="text-2xl font-extrabold tracking-tight text-[hsl(165,70%,46%)]">
             {avgPerDay.toFixed(0)}
@@ -377,12 +388,9 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
         </div>
       </div>
 
-      {/* Chart */}
       {daily.length === 0 ? (
         <div className="flex items-center justify-center py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma resposta encontrada para esta turma.
-          </p>
+          <p className="text-sm text-muted-foreground">Nenhuma resposta encontrada para esta turma.</p>
         </div>
       ) : (
         <div className="h-[320px]">
@@ -390,23 +398,11 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="dailyGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor="hsl(210 100% 62%)"
-                    stopOpacity={0.35}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="hsl(210 100% 62%)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="0%" stopColor="hsl(210 100% 62%)" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="hsl(210 100% 62%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(225 15% 15%)"
-                vertical={false}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(225 15% 15%)" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }}
@@ -414,26 +410,17 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
                 axisLine={{ stroke: "hsl(225 15% 15%)" }}
                 interval="preserveStartEnd"
               />
-              <YAxis
-                tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }}
-                tickLine={false}
-                axisLine={false}
-                width={40}
-              />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }} tickLine={false} axisLine={false} width={40} />
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload?.[0]) return null;
                   const d = payload[0].payload;
                   return (
                     <div className="bg-[hsl(225,20%,8%)] border border-[hsl(225,15%,18%)] rounded-lg px-3.5 py-2.5 shadow-xl">
-                      <p className="text-xs text-muted-foreground font-mono mb-1">
-                        {d.full}
-                      </p>
+                      <p className="text-xs text-muted-foreground font-mono mb-1">{d.full}</p>
                       <p className="text-sm font-bold text-foreground">
                         {Number(d.count).toLocaleString("pt-BR")}{" "}
-                        <span className="text-muted-foreground font-normal">
-                          respostas
-                        </span>
+                        <span className="text-muted-foreground font-normal">respostas</span>
                       </p>
                     </div>
                   );
@@ -446,12 +433,7 @@ const DailyResponses = ({ people, turmaFilter, rawSurveyCount, identifiedCount, 
                 strokeWidth={2}
                 fill="url(#dailyGrad)"
                 dot={false}
-                activeDot={{
-                  r: 5,
-                  fill: "hsl(210 100% 62%)",
-                  stroke: "hsl(225 20% 9%)",
-                  strokeWidth: 2,
-                }}
+                activeDot={{ r: 5, fill: "hsl(210 100% 62%)", stroke: "hsl(225 20% 9%)", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>

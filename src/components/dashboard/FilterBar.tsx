@@ -1,4 +1,4 @@
-import { BarChart3, Filter, X, RefreshCw, MousePointerClick } from "lucide-react";
+import { BarChart3, Filter, X, MousePointerClick } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,16 +14,26 @@ interface FilterBarProps {
   statusResposta: string;
   statusCRT: string;
   turmaList: string[];
-  filteredCount: number;
-  isRefreshing: boolean;
-  lastUpdated: Date | null;
+  ultimaAtualizacao: Date | null; // hora real do dado no banco (não do cliente)
+  fontesAtualizacao?: { ac: Date | null; ficha: Date | null; comprador: Date | null };
   crossFilter: CrossFilter | null;
   onTurmaChange: (v: string) => void;
   onStatusRespostaChange: (v: string) => void;
   onStatusCRTChange: (v: string) => void;
   onClear: () => void;
   onClearCrossFilter: () => void;
-  onRefresh: () => void;
+}
+
+function fmtBRT(d: Date | null): string {
+  if (!d) return "—";
+  return d.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 const FilterBar = ({
@@ -31,16 +41,14 @@ const FilterBar = ({
   statusResposta,
   statusCRT,
   turmaList,
-  filteredCount,
-  isRefreshing,
-  lastUpdated,
+  ultimaAtualizacao,
+  fontesAtualizacao,
   crossFilter,
   onTurmaChange,
   onStatusRespostaChange,
   onStatusCRTChange,
   onClear,
   onClearCrossFilter,
-  onRefresh,
 }: FilterBarProps) => {
   const hasFilters =
     turmaFilter !== "all" ||
@@ -68,32 +76,17 @@ const FilterBar = ({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-foreground bg-muted/50 hover:bg-muted border border-border rounded-lg transition-colors disabled:opacity-50"
-            title="Atualizar dados das planilhas"
+          <span
+            className="text-[11px] text-muted-foreground"
+            title={
+              fontesAtualizacao
+                ? `AC: ${fmtBRT(fontesAtualizacao.ac)} · Ficha: ${fmtBRT(fontesAtualizacao.ficha)} · Comprador: ${fmtBRT(fontesAtualizacao.comprador)}`
+                : undefined
+            }
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span className="hidden sm:inline">Atualizar</span>
-          </button>
-          {lastUpdated && (
-            <span className="text-[11px] text-muted-foreground hidden md:block">
-              {lastUpdated.toLocaleTimeString("pt-BR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          )}
-          <div className="text-xs text-muted-foreground font-mono bg-muted/50 px-2.5 py-1 rounded-lg border border-border">
-            {filteredCount.toLocaleString("pt-BR")}
-          </div>
-          <div
-            className="w-2 h-2 rounded-full bg-success animate-pulse"
-            title="Dados reais"
-          />
+            Atualizado em {fmtBRT(ultimaAtualizacao)}
+          </span>
+          <div className="w-2 h-2 rounded-full bg-success animate-pulse" title="Dados ao vivo do banco" />
         </div>
       </div>
 
