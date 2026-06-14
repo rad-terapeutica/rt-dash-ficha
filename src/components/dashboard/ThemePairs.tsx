@@ -1,14 +1,20 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import type { DistRow } from "@/services/fichaAnalytics";
 import {
-  getSurveyDistribution,
-  getAreaDistribution,
-  type Person,
-} from "@/data/dataProcessor";
+  type PerfilScope,
+  compareCardData,
+  profileBuyerDist,
+} from "@/services/distribuicaoComprador";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Database } from "lucide-react";
 import type { CrossFilter } from "@/pages/Index";
+
+interface DistItem {
+  value: string;
+  total: number;
+}
 
 const COLORS = [
   "hsl(165 70% 46%)",
@@ -28,7 +34,8 @@ type SurveyFieldKey =
   | "dispostoinvestir";
 
 interface ThemePairsProps {
-  people: Person[];
+  distribuicao: DistRow[]; // banco — distribuição (todos os respondentes) da turma
+  perfilComprador: PerfilScope | null; // banco — distribuição por comprador
   crossFilter: CrossFilter | null;
   onCrossFilter: (filter: CrossFilter | null) => void;
 }
@@ -75,13 +82,27 @@ const themes: ThemeConfig[] = [
   },
 ];
 
-const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => {
+const ThemePairs = ({ distribuicao, perfilComprador, crossFilter, onCrossFilter }: ThemePairsProps) => {
   const [onlyRT, setOnlyRT] = useState(false);
-  const profileFiltered = onlyRT
-    ? people.filter((p) => p.virouCRT && p.respondeuPesquisa)
-    : people.filter((p) => p.respondeuPesquisa);
-  const respondentes = people.filter((p) => p.respondeuPesquisa);
-  const rtPeople = people.filter((p) => p.virouCRT && p.respondeuPesquisa);
+
+  // Distribuição oficial (banco) por campo — perfil "todos" (vw_ficha_distribuicao_por_tag).
+  const distBancoPorCampo = useMemo(() => {
+    const map = new Map<string, DistItem[]>();
+    for (const r of distribuicao) {
+      if (!map.has(r.campo)) map.set(r.campo, []);
+      map.get(r.campo)!.push({ value: r.valor, total: r.respondentes });
+    }
+    for (const arr of map.values()) arr.sort((a, b) => b.total - a.total);
+    return map;
+  }, [distribuicao]);
+
+  // ProfileCard (banco): "todos" (distribuicao_por_tag) ou "somente Comu RT" (distribuicao_por_comprador).
+  const dataForTheme = (theme: ThemeConfig): DistItem[] => {
+    if (onlyRT) {
+      return perfilComprador ? profileBuyerDist(perfilComprador, theme) : [];
+    }
+    return distBancoPorCampo.get(theme.isArea ? "areas" : theme.surveyKey) ?? [];
+  };
 
   const handleSliceClick = useCallback(
     (theme: ThemeConfig, value: string) => {
@@ -129,15 +150,12 @@ const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => 
           <div key={theme.key} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ProfileCard
               theme={theme}
-              people={profileFiltered}
+              data={dataForTheme(theme)}
+              fromBanco
               crossFilter={crossFilter}
               onSliceClick={(value) => handleSliceClick(theme, value)}
             />
-            <CompareCard
-              theme={theme}
-              respondentes={respondentes}
-              rtPeople={rtPeople}
-            />
+            <CompareCard theme={theme} perfilComprador={perfilComprador} />
           </div>
         ))}
       </div>
@@ -149,18 +167,17 @@ const ThemePairs = ({ people, crossFilter, onCrossFilter }: ThemePairsProps) => 
 
 function ProfileCard({
   theme,
-  people,
+  data,
+  fromBanco,
   crossFilter,
   onSliceClick,
 }: {
   theme: ThemeConfig;
-  people: Person[];
+  data: DistItem[];
+  fromBanco: boolean;
   crossFilter: CrossFilter | null;
   onSliceClick: (value: string) => void;
 }) {
-  const data = theme.isArea
-    ? getAreaDistribution(people)
-    : getSurveyDistribution(people, theme.surveyKey);
   const total = data.reduce((s, d) => s + d.total, 0);
   const sliced = data.slice(0, 7);
   const maxVal = sliced.length > 0 ? sliced[0].total : 1;
@@ -183,6 +200,11 @@ function ProfileCard({
         <span className="text-[10px] font-medium text-primary/70 uppercase tracking-wider bg-primary/8 px-1.5 py-0.5 rounded">
           Distribuição
         </span>
+        {fromBanco && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">
+            <Database className="w-2.5 h-2.5" /> banco
+          </span>
+        )}
       </div>
       <p className="text-[11px] text-muted-foreground/60 mb-5">
         {theme.profileDesc}
@@ -307,25 +329,15 @@ function ProfileCard({
 
 function CompareCard({
   theme,
-  respondentes,
-  rtPeople,
+  perfilComprador,
 }: {
   theme: ThemeConfig;
-  respondentes: Person[];
-  rtPeople: Person[];
+  perfilComprador: PerfilScope | null;
 }) {
-  const allDist = getSurveyDistribution(respondentes, theme.surveyKey);
-  const rtDist = getSurveyDistribution(rtPeople, theme.surveyKey);
-  const totalAll = allDist.reduce((s, d) => s + d.total, 0);
-  const totalRt = rtDist.reduce((s, d) => s + d.total, 0);
-
-  const merged = allDist.map((a) => {
-    const c = rtDist.find((d) => d.value === a.value);
-    const pctAll = totalAll > 0 ? (a.total / totalAll) * 100 : 0;
-    const pctRt = totalRt > 0 && c ? (c.total / totalRt) * 100 : 0;
-    const lift = pctAll > 0 ? ((pctRt - pctAll) / pctAll) * 100 : 0;
-    return { value: a.value, pctAll, pctRt, lift };
-  });
+  const merged = (perfilComprador ? compareCardData(perfilComprador, theme.surveyKey) : [])
+    .slice()
+    .sort((a, b) => b.pctAll - a.pctAll);
+  const semCompradores = !perfilComprador || perfilComprador.totalCompradores === 0;
 
   return (
     <div className="dashboard-card">
@@ -336,11 +348,22 @@ function CompareCard({
         <span className="text-[10px] font-medium text-[hsl(38,95%,55%)]/80 uppercase tracking-wider bg-[hsl(38,95%,55%)]/8 px-1.5 py-0.5 rounded">
           Comparativo
         </span>
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">
+          <Database className="w-2.5 h-2.5" /> banco
+        </span>
       </div>
       <p className="text-[11px] text-muted-foreground/60 mb-5">
         Pesquisa vs Comu RT — variação de perfil
       </p>
 
+      {semCompradores ? (
+        <div className="flex items-center justify-center py-10 text-center">
+          <p className="text-xs text-muted-foreground/60 max-w-[260px]">
+            Sem compradores nesta turma ainda — o comparativo aparece quando houver compras registradas.
+          </p>
+        </div>
+      ) : (
+      <>
       {/* Header */}
       <div className="grid grid-cols-[1fr_44px_44px_52px] sm:grid-cols-[1fr_60px_60px_68px] items-center gap-1.5 sm:gap-2 mb-3 pb-2 border-b border-border/50">
         <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Categoria</span>
@@ -389,6 +412,8 @@ function CompareCard({
           </div>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 }

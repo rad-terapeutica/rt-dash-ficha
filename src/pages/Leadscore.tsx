@@ -1,18 +1,13 @@
 import { useMemo } from "react";
-import {
-  computeSignals,
-  computeScores,
-  getLeadscoreKPIs,
-  getBuyerProfiles,
-} from "@/data/leadscoreProcessor";
-import type { Person } from "@/data/dataProcessor";
+import type { PerfilScope } from "@/services/distribuicaoComprador";
+import { computeLeadscoreBanco } from "@/data/leadscoreBanco";
 import LeadscoreKPICards from "@/components/leadscore/LeadscoreKPIs";
 import SignalRanking from "@/components/leadscore/SignalRanking";
 import BuyerProfile from "@/components/leadscore/BuyerProfile";
-import { Database, FlaskConical, BookOpen } from "lucide-react";
+import { Database, FlaskConical, BookOpen, ShoppingCart } from "lucide-react";
 
 interface LeadscoreProps {
-  people: Person[];
+  perfilComprador: PerfilScope | null;
 }
 
 /* ─── Methodology Cards ─── */
@@ -130,11 +125,15 @@ function MethodologyCards({
 
 /* ─── Main ─── */
 
-const Leadscore = ({ people }: LeadscoreProps) => {
-  const signals = useMemo(() => computeSignals(people), [people]);
-  const scores = useMemo(() => computeScores(people, signals), [people, signals]);
-  const kpis = useMemo(() => getLeadscoreKPIs(people, scores), [people, scores]);
-  const profiles = useMemo(() => getBuyerProfiles(people), [people]);
+const Leadscore = ({ perfilComprador }: LeadscoreProps) => {
+  const { signals, profiles, kpis } = useMemo(
+    () =>
+      perfilComprador
+        ? computeLeadscoreBanco(perfilComprador)
+        : { signals: [], profiles: [], kpis: { respondentes: 0, compradores: 0, naoCompradores: 0, taxaConversao: 0, scoreMedia: 0 } },
+    [perfilComprador]
+  );
+  const semCompradores = !perfilComprador || perfilComprador.totalCompradores === 0;
 
   return (
     <div className="space-y-6">
@@ -146,9 +145,20 @@ const Leadscore = ({ people }: LeadscoreProps) => {
         naoCompradores={kpis.naoCompradores}
       />
 
-      <SignalRanking signals={signals} />
-
-      <BuyerProfile profiles={profiles} />
+      {semCompradores ? (
+        <div className="dashboard-card flex items-center gap-3 py-8 justify-center text-center">
+          <ShoppingCart className="w-5 h-5 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground/70 max-w-md">
+            Sem compradores nesta turma ainda — o ranking de sinais e o perfil comprador × não-comprador
+            aparecem assim que houver compras registradas para a turma selecionada.
+          </p>
+        </div>
+      ) : (
+        <>
+          <SignalRanking signals={signals} />
+          <BuyerProfile profiles={profiles} />
+        </>
+      )}
     </div>
   );
 };

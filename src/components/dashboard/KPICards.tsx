@@ -1,4 +1,4 @@
-import { Users, FileCheck, TrendingUp, Award, Target } from "lucide-react";
+import { Users, FileCheck, TrendingUp, Award, Target, Database } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface KPICardsProps {
@@ -9,6 +9,7 @@ interface KPICardsProps {
   pctRespondentes: number;
   pctCrtRespondentes: number;
   pctCrtTotal: number;
+  crtFromBanco?: boolean; // COMU RT vindo de raw_comprador (banco)
 }
 
 const kpis: Array<{
@@ -44,14 +45,14 @@ const kpis: Array<{
   {
     key: "crt",
     label: "Na Comu RT",
-    desc: "Total de contatos com tag CRT desta turma",
+    desc: "Compradores da COMU RT (raw_comprador) desta turma",
     icon: Award,
     color: "hsl(var(--chart-4))",
   },
   {
     key: "pctCrtRespondentes",
     label: "Conversão para Comu RT",
-    desc: "Percentual dos respondentes que entraram na Comu RT",
+    desc: "Percentual dos respondentes que compraram a Comu RT",
     icon: Target,
     color: "hsl(var(--success))",
     suffix: "%",
@@ -92,7 +93,14 @@ const KPICards = (props: KPICardsProps) => {
                 {props.crtComPesquisa.toLocaleString("pt-BR")} com pesquisa
               </div>
             )}
-            <div className="stat-label mt-1">{kpi.label}</div>
+            <div className="stat-label mt-1 flex items-center gap-1.5">
+              {kpi.label}
+              {kpi.key === "crt" && props.crtFromBanco && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-medium text-[hsl(var(--chart-4))]/90 bg-[hsl(var(--chart-4))]/10 px-1.5 py-0.5 rounded">
+                  <Database className="w-2.5 h-2.5" /> banco
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-muted-foreground/60 mt-0.5 leading-tight">
               {kpi.desc}
             </div>
